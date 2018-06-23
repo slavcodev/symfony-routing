@@ -10,6 +10,61 @@
 
 ## TL;DR
 
+Just compare the conventional Yaml file
+~~~yaml
+# Using route for all methods
+/api/status:
+  controller: App\Controller\StatusApiController:handle
+# Using method as action name with shared controller
+# Also override shared route info with specific
+/api/posts/{id}:
+  controller: App\Controller\BlogApiController
+  defaults:
+    foo: foo
+  methods:
+    GET:
+      defaults:
+        bar: bar
+    PUT: ~
+# Using one controller action for many methods
+/api/comments:
+  controller: App\Controller\CommentsApiController::handle
+  methods:
+    GET: ~
+    POST: ~
+~~~
+
+And its original representation
+~~~yaml
+/api/status:
+  path: /api/status
+  controller: App\Controller\StatusApiController:handle
+/api/posts/{id}:
+  path: /api/posts/{id}
+  controller: App\Controller\BlogApiController::get
+  defaults:
+    bar: bar
+  methods:
+    - GET
+put::/api/posts/{id}:
+  path: /api/posts/{id}
+  controller: App\Controller\BlogApiController::put
+  defaults:
+    foo: foo
+  methods:
+    - PUT
+/api/comments:
+  path: /api/comments
+  controller: App\Controller\CommentsApiController::handle
+  methods:
+    - GET
+post::/api/comments:
+  path: /api/comments
+  controller: App\Controller\CommentsApiController::handle
+  methods:
+    - POST
+~~~
+
 ## Install
 
 Using [Composer](https://getcomposer.org)
