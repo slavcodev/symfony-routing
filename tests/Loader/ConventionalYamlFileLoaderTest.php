@@ -61,4 +61,19 @@ final class ConventionalYamlFileLoaderTest extends TestCase
         self::assertSame('/api/comments', $postComment->getPath());
         self::assertSame('App\Controller\CommentsApiController::handle', $postComment->getDefault('_controller'));
     }
+
+    /**
+     * @test
+     */
+    public function loadResources()
+    {
+        $routes = $this->loader->load('routing-groups.yaml');
+        self::assertCount(5, $routes);
+
+        self::assertNotNull($routes->get('/api/status'));
+        self::assertNotNull($routes->get('/api/posts/{id}'));
+        self::assertNotNull($routes->get('put::/api/posts/{id}'));
+        self::assertNotNull($routes->get('/api/comments'));
+        self::assertNotNull($routes->get('post::/api/comments'));
+    }
 }
