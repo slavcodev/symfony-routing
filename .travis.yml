@@ -1,0 +1,49 @@
+# This triggers builds to run on the new TravisCI infrastructure.
+# See: http://docs.travis-ci.com/user/workers/container-based-infrastructure/
+sudo: false
+
+language: php
+
+php:
+  - 7.1
+  - 7.2
+
+## Cache composer
+cache:
+  directories:
+    - $HOME/.composer/cache
+
+env:
+  global:
+    - LOG_DIR=./build/logs
+    - CLOVER_PATH=$LOG_DIR/clover.xml
+    - EXECUTE_COVERAGE=false
+
+matrix:
+  fast_finish: true
+  include:
+    - php: 7.1
+      env:
+        - EXECUTE_COVERAGE=true
+    - php: 7.2
+  allow_failures:
+    - php: 7.2
+
+notifications:
+  email: false
+
+before_install:
+  - phpenv config-rm xdebug.ini || return 0
+  - mkdir -p $LOG_DIR || return 0
+
+install:
+  - composer self-update
+  - composer install --no-interaction --prefer-dist
+
+script:
+  # PHPUnit
+  - if [[ $EXECUTE_COVERAGE == 'true' ]]; then phpdbg -qrr ./vendor/bin/phpunit --coverage-clover=$CLOVER_PATH ; fi
+  - if [[ $EXECUTE_COVERAGE != 'true' ]]; then ./vendor/bin/phpunit ; fi
+
+after_script:
+  - if [[ $EXECUTE_COVERAGE == 'true' ]]; then ./vendor/bin/ocular code-coverage:upload --format=php-clover $CLOVER_PATH ; fi
