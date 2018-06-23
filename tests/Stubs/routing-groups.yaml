@@ -1,0 +1,2 @@
+# Include external routes
+- resource: routing.yaml

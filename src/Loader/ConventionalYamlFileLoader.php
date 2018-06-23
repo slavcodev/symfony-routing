@@ -16,7 +16,9 @@ final class ConventionalYamlFileLoader extends YamlFileLoader
     {
         // Conventional we use path as route name,
         // so need to set path key to avoid validation errors.
-        $config['path'] = $urlTemplate;
+        if (!isset($config['resource'])) {
+            $config['path'] = $urlTemplate;
+        }
 
         parent::validate($config, $urlTemplate, $path);
     }
@@ -24,7 +26,9 @@ final class ConventionalYamlFileLoader extends YamlFileLoader
     protected function parseRoute(RouteCollection $collection, $urlTemplate, array $config, $path)
     {
         // Conventional we use path as route name
-        $config['path'] = $urlTemplate;
+        if (!isset($config['resource'])) {
+            $config['path'] = $urlTemplate;
+        }
 
         if (isset($config['methods'])) {
             $this->parseMethodRoutes($collection, $config['methods'], $urlTemplate, $config, $path);
