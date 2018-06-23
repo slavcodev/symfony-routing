@@ -5,7 +5,7 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\Routing\Tests\Loader;
+namespace Slavcodev\Symfony\Routing\Tests;
 
 use PHPUnit\Framework;
 

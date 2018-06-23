@@ -16,12 +16,12 @@
   },
   "autoload": {
     "psr-4": {
-      "Symfony\\Component\\Routing\\Loader\\": ["src/"]
+      "Slavcodev\\Symfony\\Routing\\": ["src/"]
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Symfony\\Component\\Routing\\Tests\\Loader\\": ["tests/"]
+      "Slavcodev\\Symfony\\Routing\\Tests\\": ["tests/"]
     }
   },
   "scripts": {
