@@ -30,10 +30,10 @@ final class ConventionalYamlFileLoader extends YamlFileLoader
             $config['path'] = $urlTemplate;
         }
 
-        if (isset($config['methods'])) {
-            $this->parseMethodRoutes($collection, $config['methods'], $urlTemplate, $config, $path);
-        } else {
+        if (empty($config['methods']) || is_integer(key($config['methods']))) {
             parent::parseRoute($collection, $urlTemplate, $config, $path);
+        } else {
+            $this->parseMethodRoutes($collection, $config['methods'], $urlTemplate, $config, $path);
         }
     }
 
