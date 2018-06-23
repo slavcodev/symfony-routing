@@ -15,6 +15,7 @@ Just compare the conventional Yaml file
 # Using route for all methods
 /api/status:
   controller: App\Controller\StatusApiController:handle
+  methods: ['GET', 'HEAD']
 # Using method as action name with shared controller
 # Also override shared route info with specific
 /api/posts/{id}:
@@ -39,6 +40,7 @@ And its original representation
 /api/status:
   path: /api/status
   controller: App\Controller\StatusApiController:handle
+  methods: ['GET', 'HEAD']
 /api/posts/{id}:
   path: /api/posts/{id}
   controller: App\Controller\BlogApiController::get
