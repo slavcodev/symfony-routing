@@ -1,0 +1,41 @@
+{
+  "name": "slavcodev/symfony-routing",
+  "description": "The Conventional Symfony Routes Loader",
+  "license": "BSD-2-Clause",
+  "keywords": ["symfony", "routing", "router", "URL", "URI"],
+  "authors": [
+    {"email": "slavcopost@gmail.com", "name": "Veaceslav Medvedev"}
+  ],
+  "require": {
+    "php": "^7.1",
+    "symfony/routing": "^4.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7.1",
+    "scrutinizer/ocular": "^1.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Symfony\\Component\\Routing\\Loader\\": ["src/"]
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Symfony\\Component\\Routing\\Tests\\Loader\\": ["tests/"]
+    }
+  },
+  "scripts": {
+    "check": [
+      "@test"
+    ],
+    "test": "phpunit",
+    "test-coverage": "phpunit --coverage-clover build/logs/clover.xml",
+    "show-coverage": "phpunit --coverage-text=php://stdout",
+    "report-coverage": "phpunit --coverage-html build/logs/report"
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.0.x-dev"
+    }
+  }
+}
