@@ -48,7 +48,7 @@ And its original representation
     bar: bar
   methods:
     - GET
-put::/api/posts/{id}:
+/api/posts/{id}::put:
   path: /api/posts/{id}
   controller: App\Controller\BlogApiController::put
   defaults:
@@ -60,7 +60,7 @@ put::/api/posts/{id}:
   controller: App\Controller\CommentsApiController::handle
   methods:
     - GET
-post::/api/comments:
+/api/comments::post:
   path: /api/comments
   controller: App\Controller\CommentsApiController::handle
   methods:
