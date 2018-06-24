@@ -40,7 +40,7 @@ final class ConventionalYamlFileLoader extends YamlFileLoader
         // Conventional we use path as route name
         $config['path'] = $urlTemplate;
 
-        if (empty($config['methods']) || is_integer(key($config['methods']))) {
+        if (empty($config['methods']) || array_keys($config['methods']) === range(0, count($config['methods']) - 1)) {
             parent::parseRoute($collection, $urlTemplate, $config, $path);
         } else {
             $this->parseMethodRoutes($collection, $config['methods'], $urlTemplate, $config, $path);
@@ -53,6 +53,10 @@ final class ConventionalYamlFileLoader extends YamlFileLoader
         unset($config['controller'], $config['defaults']['_controller']);
 
         foreach ($methods as $method => $methodConfig) {
+            if (!empty($methodConfig) && !is_array($methodConfig)) {
+                throw new \InvalidArgumentException(sprintf('Route "%s" has incorrect methods definition.', $urlTemplate));
+            }
+
             $methodConfig = array_merge($config, (array) $methodConfig);
             $method = strtolower($method);
 
