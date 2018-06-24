@@ -10,6 +10,7 @@ namespace Slavcodev\Symfony\Routing\Tests\Loader;
 use Slavcodev\Symfony\Routing\Tests\TestCase;
 use Slavcodev\Symfony\Routing\Loader\ConventionalYamlFileLoader;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Routing\Route;
 
 final class ConventionalYamlFileLoaderTest extends TestCase
 {
@@ -70,10 +71,15 @@ final class ConventionalYamlFileLoaderTest extends TestCase
         $routes = $this->loader->load('routing-groups.yaml');
         self::assertCount(5, $routes);
 
-        self::assertNotNull($routes->get('/api/status'));
-        self::assertNotNull($routes->get('/api/posts/{id}'));
-        self::assertNotNull($routes->get('/api/posts/{id}::put'));
-        self::assertNotNull($routes->get('/api/comments'));
-        self::assertNotNull($routes->get('/api/comments::post'));
+        self::assertInstanceOf(Route::class, $routes->get('/new/api/status'));
+        self::assertSame('/new/api/status', $routes->get('/new/api/status')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('/new/api/posts/{id}'));
+        self::assertSame('/new/api/posts/{id}', $routes->get('/new/api/posts/{id}')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('/new/api/posts/{id}::put'));
+        self::assertSame('/new/api/posts/{id}', $routes->get('/new/api/posts/{id}::put')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('/new/api/comments'));
+        self::assertSame('/new/api/comments', $routes->get('/new/api/comments')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('/new/api/comments::post'));
+        self::assertSame('/new/api/comments', $routes->get('/new/api/comments::post')->getPath());
     }
 }
