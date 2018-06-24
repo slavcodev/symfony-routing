@@ -60,7 +60,7 @@ final class ConventionalYamlFileLoader extends YamlFileLoader
                 $routeName = $urlTemplate;
             } else {
                 $methodConfig['methods'] = [$method];
-                $routeName = $method . '::' . $urlTemplate;
+                $routeName = $urlTemplate. '::' . $method;
             }
 
             parent::validate($methodConfig, $routeName, $path);

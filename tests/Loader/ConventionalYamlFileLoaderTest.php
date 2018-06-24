@@ -44,7 +44,7 @@ final class ConventionalYamlFileLoaderTest extends TestCase
         self::assertNull($getBlogPost->getDefault('foo'));
         self::assertSame('bar', $getBlogPost->getDefault('bar'));
 
-        $putBlogPost = $routes->get('put::/api/posts/{id}');
+        $putBlogPost = $routes->get('/api/posts/{id}::put');
         self::assertNotNull($putBlogPost);
         self::assertSame('/api/posts/{id}', $putBlogPost->getPath());
         self::assertSame('App\Controller\BlogApiController::put', $putBlogPost->getDefault('_controller'));
@@ -56,7 +56,7 @@ final class ConventionalYamlFileLoaderTest extends TestCase
         self::assertSame('/api/comments', $getComments->getPath());
         self::assertSame('App\Controller\CommentsApiController::handle', $getComments->getDefault('_controller'));
 
-        $postComment = $routes->get('post::/api/comments');
+        $postComment = $routes->get('/api/comments::post');
         self::assertNotNull($postComment);
         self::assertSame('/api/comments', $postComment->getPath());
         self::assertSame('App\Controller\CommentsApiController::handle', $postComment->getDefault('_controller'));
@@ -72,8 +72,8 @@ final class ConventionalYamlFileLoaderTest extends TestCase
 
         self::assertNotNull($routes->get('/api/status'));
         self::assertNotNull($routes->get('/api/posts/{id}'));
-        self::assertNotNull($routes->get('put::/api/posts/{id}'));
+        self::assertNotNull($routes->get('/api/posts/{id}::put'));
         self::assertNotNull($routes->get('/api/comments'));
-        self::assertNotNull($routes->get('post::/api/comments'));
+        self::assertNotNull($routes->get('/api/comments::post'));
     }
 }
