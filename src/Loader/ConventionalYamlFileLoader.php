@@ -23,12 +23,22 @@ final class ConventionalYamlFileLoader extends YamlFileLoader
         parent::validate($config, $urlTemplate, $path);
     }
 
+    protected function parseImport(RouteCollection $collection, array $config, $path, $file)
+    {
+        // Conventional we use path as route name, so prefix should be same as name prefix
+        if (!isset($config['prefix']) && isset($config['name_prefix'])) {
+            $config['prefix'] = $config['name_prefix'];
+        }
+
+        $config['name_prefix'] = $config['prefix'];
+
+        parent::parseImport($collection, $config, $path, $file);
+    }
+
     protected function parseRoute(RouteCollection $collection, $urlTemplate, array $config, $path)
     {
         // Conventional we use path as route name
-        if (!isset($config['resource'])) {
-            $config['path'] = $urlTemplate;
-        }
+        $config['path'] = $urlTemplate;
 
         if (empty($config['methods']) || is_integer(key($config['methods']))) {
             parent::parseRoute($collection, $urlTemplate, $config, $path);
