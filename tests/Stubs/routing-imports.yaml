@@ -1,0 +1,12 @@
+- resource: routing_with_name.yaml
+  path: '/api'
+  host: example.com
+  schemes: ['https']
+  condition: "context.getMethod() in ['GET', 'HEAD']"
+  defaults:
+    _controller: FooController
+    _allowed_methods: ['GET', 'HEAD']
+  requirements:
+    fields: \w+
+  options:
+    option: value
