@@ -15,7 +15,6 @@ YamlFileLoader loads Yaml routing files.
 - [x] No `prefix` for the imports, we can use the same `path`. 
 - [x] No pointless `type` key, because only one type is supported, that's `yaml`
 - [x] No `trailing_slash_on_root` key (at least at the moment)
-- [x] No ambiguous `controller` key, controller can be defined only in `defaults`
 - [x] The `methods` has different meaning than in the original format. It groups the routes by HTTP method (useful in REST API). The allowed methods for the route is specified as `_allowed_methods` in the route `defaults` now, along with `_controller`.
 - [x] The `path` does not support array anymore. To define routes per locales use new `locales` key. 
 
@@ -24,6 +23,7 @@ YamlFileLoader loads Yaml routing files.
 - [x] [The `group` key, to group multiple routes with ability to define common values for group](#group-routes)
 - [x] [The `methods` key, similar to `group`, but with specific behavior to add routes per locale](#define-methods-routes)
 - [x] [The `locales` key, similar to `group`, but with specific behavior to add routes per locale](#define-localized-routes)
+- [x] [Support custom keys, they are automatically moved to defaults key](#support-custom-keys)
 
 ## TL;DR
 
@@ -81,14 +81,14 @@ Extend shared definition to specify method routes
 
 its original representation
 ~~~yaml
-api/posts/{id}/get:
+posts/{id}/get:
   path: '/api/posts/{id}'
   defaults:
     _controller: App\Controller\BlogApiController::get
   methods: ['GET']
   requireemnts:
     id: '[-\w\d]+'
-api/posts/{id}/put:
+posts/{id}/put:
   path: '/api/posts/{id}'
   defaults:
     _controller: App\Controller\BlogApiController::put
@@ -113,7 +113,7 @@ Specify localized routes
 
 its original representation
 ~~~yaml
-api/posts/{id}:
+posts/{id}:
   path:
     en: '/en/posts/{id}'
     es: '/es/posts/{id}'
@@ -123,6 +123,23 @@ api/posts/{id}:
     _controller: App\Controller\BlogApiController
 ~~~
 
+### Support custom keys
+
+Custom keys are automatically moved to defaults key 
+~~~yaml
+- path: '/posts/{id}'
+  title: "Hello world!"
+~~~
+
+its original representation
+~~~yaml
+posts/{id}:
+  path: '/posts/{id}'
+  requireemnts:
+    id: '[-\w\d]+'
+  defaults:
+    title: "Hello world!"
+~~~
 
 ## Install
 
