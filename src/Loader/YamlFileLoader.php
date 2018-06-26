@@ -115,32 +115,30 @@ final class YamlFileLoader extends FileLoader
             }
         }
 
-        $specialCases = array_intersect_key($config, self::SPECIAL_KEYS);
+        $cleanConfig = array_diff_key($config, self::SPECIAL_KEYS);
 
-        if (count($specialCases) > 1) {
-            throw new InvalidArgumentException('The definition must not specify more than one special "resource", "group", "methods" or "locale" keys.');
-        }
-
-        if (!$specialCases) {
+        if ($cleanConfig === $config) {
             $this->addRoute($collection, $config);
 
             return;
         }
 
-        $config = array_diff_key($config, self::SPECIAL_KEYS);
+        if (count($config) - count($cleanConfig) > 1) {
+            throw new InvalidArgumentException('The definition must not specify more than one special "resource", "group", "methods" or "locale" keys.');
+        }
 
-        if (isset($specialCases['resource'])) {
-            $importedRoutes = $this->importRoutes($file, $specialCases['resource'], $config);
-            $collection->addCollection($importedRoutes);
-        } elseif (isset($specialCases['group'])) {
-            $groupRoutes = $this->createGroupRoutes($file, $specialCases['group'], $config);
-            $collection->addCollection($groupRoutes);
-        } elseif (isset($specialCases['methods'])) {
-            $methodRoutes = $this->createMethodsRoutes($file, $specialCases['methods'], $config);
-            $collection->addCollection($methodRoutes);
-        } elseif (isset($specialCases['locales'])) {
-            $localizedRoutes = $this->createLocalizedRoutes($file, $specialCases['locales'], $config);
-            $collection->addCollection($localizedRoutes);
+        if (isset($config['resource'])) {
+            $subCollection = $this->importRoutes($file, $config['resource'], $cleanConfig);
+            $collection->addCollection($subCollection);
+        } elseif (isset($config['group'])) {
+            $subCollection = $this->createGroupRoutes($file, $config['group'], $cleanConfig);
+            $collection->addCollection($subCollection);
+        } elseif (isset($config['methods'])) {
+            $subCollection = $this->createMethodsRoutes($file, $config['methods'], $cleanConfig);
+            $collection->addCollection($subCollection);
+        } elseif (isset($config['locales'])) {
+            $subCollection = $this->createLocalizedRoutes($file, $config['locales'], $cleanConfig);
+            $collection->addCollection($subCollection);
         }
     }
 
