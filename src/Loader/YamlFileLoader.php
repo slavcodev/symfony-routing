@@ -21,6 +21,7 @@ use function dirname;
 use function in_array;
 use function is_array;
 use function is_string;
+use function ltrim;
 use function pathinfo;
 use function sprintf;
 use function strtolower;
@@ -151,7 +152,7 @@ final class YamlFileLoader extends FileLoader
             $this->mergeRouteOptions($route, $config);
 
             if (isset($config['path'])) {
-                $route->setPath($routePrototype->getPath() . $config['path']);
+                $route->setPath($routePrototype->getPath() . '/' . ltrim($config['path'], '/'));
             }
 
             $collection->add(trim($route->getPath(), '/'), $route);
