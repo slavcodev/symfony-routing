@@ -18,6 +18,13 @@ Security - in case of vulnerabilities.
 
 _TBD_
 
+## [0.4.0] 2018-06-26
+### Added
+- [x] Added support for custom fields, they are moved to defaults keys.
+
+### Fixed
+- [x] Fixed concatenation of base path and specific path for the groups.
+
 ## [0.3.0] 2018-06-26
 
 Initial release.
