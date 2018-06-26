@@ -20,7 +20,7 @@
         id: \w+
       defaults:
         _allowed_methods: ['GET']
-    - path: '/error'
+    - path: 'error'
       host: error.example.org
       schemes: ['https']
       condition: "context.getMethod() in ['GET']"
