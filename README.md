@@ -21,9 +21,9 @@ YamlFileLoader loads Yaml routing files.
 
 ## New features
 
-- [x] The `group` key, to group multiple routes with ability to define common values for group
-- [x] The `methods` key, similar to `group`, but with specific behavior to add routes per locale
-- [ ] The `locales` key, similar to `group`, but with specific behavior to add routes per locale
+- [x] [The `group` key, to group multiple routes with ability to define common values for group](#group-routes)
+- [x] [The `methods` key, similar to `group`, but with specific behavior to add routes per locale](#define-methods-routes)
+- [x] [The `locales` key, similar to `group`, but with specific behavior to add routes per locale](#define-localized-routes)
 
 ## TL;DR
 
