@@ -80,15 +80,6 @@ final class YamlFileLoader extends FileLoader
         foreach ($parsedConfig as $config) {
             Assert::definition($config);
 
-            if ($extraKeys = array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS)) {
-                $config = array_intersect_key($config, YamlFileLoader::SUPPORTED_KEYS);
-                if (!isset($config['defaults'])) {
-                    $config['defaults'] = $extraKeys;
-                } else {
-                    $config['defaults'] = array_merge($config['defaults'], $extraKeys);
-                }
-            }
-
             if (isset($config['resource'])) {
                 $importedRoutes = $this->importRoutes($file, $config['resource'], $config);
                 $collection->addCollection($importedRoutes);
@@ -221,14 +212,31 @@ final class YamlFileLoader extends FileLoader
 
     private function createRoute(array $config): Route
     {
+        $defaults = $config['defaults'] ?? [];
+
+        if ($extraKeys = array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS)) {
+            $defaults += $extraKeys;
+
+            return new Route(
+                $config['path'] ?? '',
+                $defaults,
+                $config['requirements'] ?? [],
+                $config['options'] ?? [],
+                $config['host'] ?? null,
+                $config['schemes'] ?? null,
+                $defaults['_allowed_methods'] ?? null,
+                $config['condition'] ?? null
+            );
+        }
+
         return new Route(
             $config['path'] ?? '',
-            $config['defaults'] ?? [],
+            $defaults,
             $config['requirements'] ?? [],
             $config['options'] ?? [],
             $config['host'] ?? null,
             $config['schemes'] ?? null,
-            $config['defaults']['_allowed_methods'] ?? null,
+            $defaults['_allowed_methods'] ?? null,
             $config['condition'] ?? null
         );
     }
@@ -272,6 +280,14 @@ final class YamlFileLoader extends FileLoader
      */
     private function mergeRouteDefaults($routeOrCollection, array $config): void
     {
+        if ($extraKeys = array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS)) {
+            if (isset($config['defaults'])) {
+                $config['defaults'] += $extraKeys;
+            } else {
+                $config['defaults'] = $extraKeys;
+            }
+        }
+
         if (isset($config['defaults'])) {
             $routeOrCollection->addDefaults($config['defaults']);
 

@@ -1,7 +1,11 @@
-- path: '/status'
-  foo: foo
-- path: '/error'
-  defaults:
-    foo: foo
-  bar: bar
+- foo: foo
+  group:
+    - path: '/status'
+      bar: bar
+      controller: StatusController
+    - path: '/error'
+      defaults:
+        bar: bar
+      baz: baz
+      controller: ErrorController
 
