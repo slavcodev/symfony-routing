@@ -19,6 +19,8 @@ use Symfony\Component\Yaml\Yaml;
 use function array_diff;
 use function array_keys;
 use function array_map;
+use function basename;
+use function dirname;
 use function gettype;
 use function implode;
 use function in_array;
@@ -27,6 +29,9 @@ use function is_string;
 use function pathinfo;
 use function sprintf;
 use function stream_is_local;
+use function strtolower;
+use function strtoupper;
+use function trim;
 
 final class YamlFileLoader extends FileLoader
 {
