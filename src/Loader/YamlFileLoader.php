@@ -25,7 +25,6 @@ use function ltrim;
 use function pathinfo;
 use function sprintf;
 use function stream_is_local;
-use function strtoupper;
 use function trim;
 
 final class YamlFileLoader extends FileLoader
@@ -59,11 +58,14 @@ final class YamlFileLoader extends FileLoader
 
     private $routeFactory;
 
+    private $methodCollectionFactory;
+
     public function __construct(FileLocatorInterface $locator)
     {
         parent::__construct($locator);
         $this->yamlParser = new Parser();
         $this->routeFactory = new RouteFactory();
+        $this->methodCollectionFactory = new MethodCollectionFactory($this->routeFactory);
     }
 
     public function load($filename, $type = null): RouteCollection
@@ -103,7 +105,7 @@ final class YamlFileLoader extends FileLoader
         return is_string($resource) && in_array(pathinfo($resource, PATHINFO_EXTENSION), ['yml', 'yaml'], true) && !$type;
     }
 
-    private function mergeConfigs(array &$config, array $defaultConfig)
+    public static function mergeConfigs(array &$config, array $defaultConfig)
     {
         if (!empty($defaultConfig)) {
             if (isset($defaultConfig['path'], $config['path'])) {
@@ -143,7 +145,7 @@ final class YamlFileLoader extends FileLoader
             $subCollection = $this->createGroupRoutes($config['group'], $cleanConfig);
             $collection->addCollection($subCollection);
         } elseif (isset($config['methods'])) {
-            $subCollection = $this->createMethodsRoutes($config['methods'], $cleanConfig);
+            $subCollection = $this->methodCollectionFactory->create($config['methods'], $cleanConfig);
             $collection->addCollection($subCollection);
         } elseif (isset($config['locales'])) {
             $subCollection = $this->createLocalizedRoutes($config['locales'], $cleanConfig);
@@ -193,51 +195,6 @@ final class YamlFileLoader extends FileLoader
             }
 
             self::mergeConfigs($config, $groupConfig);
-            $this->parseDefinition($collection, $config);
-        }
-
-        return $collection;
-    }
-
-    private function createMethodsRoutes($methods, array $commonConfig): RouteCollection
-    {
-        if (!is_array($methods)) {
-            throw new InvalidArgumentException('The definition of the "methods" must be a YAML array.');
-        }
-
-        if (isset($commonConfig['defaults']['_allowed_methods'])) {
-            throw new InvalidArgumentException('The definition with the "methods" must not specify "_allowed_methods".');
-        }
-
-        if (!isset($commonConfig['path'])) {
-            throw new InvalidArgumentException('Missing canonical path for methods routes.');
-        }
-
-        $commonConfig['defaults']['_canonical_route'] = $commonConfig['path'];
-
-        $collection = new RouteCollection();
-
-        foreach ($methods as $method => $config) {
-            if ($config === null) {
-                $config = [];
-            }
-
-            if (!is_array($config)) {
-                throw new InvalidArgumentException('The each definition must be a YAML array.');
-            }
-
-            if (isset($config['path'])) {
-                throw new InvalidArgumentException('The definition of the "methods" must not specify "path".');
-            }
-
-            if (isset($config['defaults']['_allowed_methods'])) {
-                throw new InvalidArgumentException('The definition of the "methods" must not specify "_allowed_methods".');
-            }
-
-            $method = strtoupper($method);
-            $config['defaults']['_method'] = $method;
-            $config['defaults']['_allowed_methods'] = $method;
-            self::mergeConfigs($config, $commonConfig);
             $this->parseDefinition($collection, $config);
         }
 
