@@ -247,10 +247,10 @@ class YamlFileLoaderTest extends TestCase
     {
         $filename = 'routing_imports.yaml';
         $routes = $this->loader->load($filename);
-        $route = $routes->get('api/status');
+        $route = $routes->get('api/sub/status');
         self::assertCount(1, $routes);
         self::assertInstanceOf(Route::class, $route);
-        self::assertSame('/api/status', $route->getPath());
+        self::assertSame('/api/sub/status', $route->getPath());
         // These properties from import override children routes
         self::assertSame('example.com', $route->getHost());
         self::assertSame(['https'], $route->getSchemes());

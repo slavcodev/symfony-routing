@@ -16,7 +16,6 @@ use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Yaml;
-use function basename;
 use function dirname;
 use function in_array;
 use function is_array;
@@ -83,9 +82,10 @@ final class YamlFileLoader extends FileLoader
 
         $collection = new RouteCollection();
         $collection->addResource($file);
+        $this->setCurrentDir(dirname($file->getResource()));
 
         foreach ($parsedConfig as $config) {
-            $this->parseDefinition($collection, $file, $config, []);
+            $this->parseDefinition($collection, $config, []);
         }
 
         return $collection;
@@ -96,7 +96,7 @@ final class YamlFileLoader extends FileLoader
         return is_string($resource) && in_array(pathinfo($resource, PATHINFO_EXTENSION), ['yml', 'yaml'], true) && !$type;
     }
 
-    private function parseDefinition(RouteCollection $collection, FileResource $file, $config, array $defaultConfig)
+    private function parseDefinition(RouteCollection $collection, $config, array $defaultConfig)
     {
         Assert::definition($config);
 
@@ -128,24 +128,23 @@ final class YamlFileLoader extends FileLoader
         }
 
         if (isset($config['resource'])) {
-            $subCollection = $this->importRoutes($file, $config['resource'], $cleanConfig);
+            $subCollection = $this->importRoutes($config['resource'], $cleanConfig);
             $collection->addCollection($subCollection);
         } elseif (isset($config['group'])) {
-            $subCollection = $this->createGroupRoutes($file, $config['group'], $cleanConfig);
+            $subCollection = $this->createGroupRoutes($config['group'], $cleanConfig);
             $collection->addCollection($subCollection);
         } elseif (isset($config['methods'])) {
-            $subCollection = $this->createMethodsRoutes($file, $config['methods'], $cleanConfig);
+            $subCollection = $this->createMethodsRoutes($config['methods'], $cleanConfig);
             $collection->addCollection($subCollection);
         } elseif (isset($config['locales'])) {
-            $subCollection = $this->createLocalizedRoutes($file, $config['locales'], $cleanConfig);
+            $subCollection = $this->createLocalizedRoutes($config['locales'], $cleanConfig);
             $collection->addCollection($subCollection);
         }
     }
 
-    private function importRoutes(FileResource $currentFile, string $filenameGlob, array $commonConfig): RouteCollection
+    private function importRoutes(string $filenameGlob, array $commonConfig): RouteCollection
     {
-        $this->setCurrentDir(dirname($currentFile->getResource()));
-        $imported = $this->import($filenameGlob, null, false, basename($currentFile->getResource()));
+        $imported = $this->import($filenameGlob);
         if (!is_array($imported)) {
             $imported = [$imported];
         }
@@ -171,18 +170,18 @@ final class YamlFileLoader extends FileLoader
         return $collection;
     }
 
-    private function createGroupRoutes(FileResource $file, array $routes, array $groupConfig): RouteCollection
+    private function createGroupRoutes(array $routes, array $groupConfig): RouteCollection
     {
         $collection = new RouteCollection();
 
         foreach ($routes as $config) {
-            $this->parseDefinition($collection, $file, $config, $groupConfig);
+            $this->parseDefinition($collection, $config, $groupConfig);
         }
 
         return $collection;
     }
 
-    private function createMethodsRoutes(FileResource $file, $methods, array $commonConfig): RouteCollection
+    private function createMethodsRoutes($methods, array $commonConfig): RouteCollection
     {
         Assert::definitionWithMethodsSpecification($methods, $commonConfig);
         $collection = new RouteCollection();
@@ -190,13 +189,13 @@ final class YamlFileLoader extends FileLoader
         foreach ($methods as $method => $config) {
             Assert::methodDefinition($config);
             $config['defaults']['_method'] = strtoupper($method);
-            $this->parseDefinition($collection, $file, $config, $commonConfig);
+            $this->parseDefinition($collection, $config, $commonConfig);
         }
 
         return $collection;
     }
 
-    private function createLocalizedRoutes(FileResource $file, array $localizedUrlTemplates, array $commonConfig): RouteCollection
+    private function createLocalizedRoutes(array $localizedUrlTemplates, array $commonConfig): RouteCollection
     {
         if (!isset($commonConfig['path'])) {
             throw new InvalidArgumentException('Missing canonical path for localized routes.');
@@ -210,7 +209,7 @@ final class YamlFileLoader extends FileLoader
         foreach ($localizedUrlTemplates as $locale => $urlTemplate) {
             $config['path'] = $urlTemplate;
             $config['defaults']['_locale'] = $locale;
-            $this->parseDefinition($collection, $file, $config, $commonConfig);
+            $this->parseDefinition($collection, $config, $commonConfig);
         }
 
         return $collection;

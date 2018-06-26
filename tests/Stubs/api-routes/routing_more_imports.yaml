@@ -1,1 +1,2 @@
 - resource: routing_items.yaml
+  path: 'sub'
