@@ -1,4 +1,4 @@
-- resource: routing_with_name.yaml
+- resource: api-routes/routing_more_imports.yaml
   path: '/api'
   host: example.com
   schemes: ['https']
