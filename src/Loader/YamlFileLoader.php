@@ -20,6 +20,7 @@ use function array_diff;
 use function array_keys;
 use function array_map;
 use function dirname;
+use function gettype;
 use function implode;
 use function in_array;
 use function is_array;
@@ -59,6 +60,10 @@ final class YamlFileLoader extends FileLoader
     public function load($filename, $type = null): RouteCollection
     {
         $filepath = $this->locator->locate($filename);
+
+        if (!is_string($filepath)) {
+            throw new InvalidArgumentException(sprintf('Got "%s" but expected the string.', gettype($filepath)));
+        }
 
         if (!stream_is_local($filepath)) {
             throw new InvalidArgumentException(sprintf('This is not a local file "%s".', $filepath));

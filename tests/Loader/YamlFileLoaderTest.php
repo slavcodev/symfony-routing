@@ -31,6 +31,22 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
+    public function thatLocatorReturnValidFilePath()
+    {
+        $filename = 'routing.yaml';
+        /** @var FileLocatorInterface|MockObject $locator */
+        $locator = $this->createMock(FileLocatorInterface::class);
+        $locator->method('locate')->willReturn([$filename]);
+        $loader = new YamlFileLoader($locator);
+        $expectedMessage = sprintf('Got "%s" but expected the string.', gettype([$filename]));
+
+        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
+        $loader->load($filename);
+    }
+
+    /**
+     * @test
+     */
     public function supportOnlyLocalFiles()
     {
         $filename = 'https://raw.githubusercontent.com/slavcodev/symfony-routing/master/tests/Stubs/routing.yaml';
