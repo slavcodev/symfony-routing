@@ -1,0 +1,13 @@
+- path: '/status'
+  host: example.org
+  schemes: ['https', 'http']
+  condition: "context.getMethod() in ['PUT']"
+  defaults:
+    _controller: 'StatusController'
+  requirements:
+    id: \d+
+  options:
+    param: value
+  locales:
+    en: '/status/en'
+    es: '/status/es'

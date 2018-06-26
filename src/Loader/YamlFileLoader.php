@@ -37,6 +37,7 @@ final class YamlFileLoader extends FileLoader
         'resource',
         'group',
         'methods',
+        'locales',
         // Route definition keys
         'path',
         'host',
@@ -105,7 +106,9 @@ final class YamlFileLoader extends FileLoader
         } elseif (isset($config['group'])) {
             $this->parseGroup($collection, $config, $config['group']);
         } elseif (isset($config['methods'])) {
-            $this->parseMethods($collection, $config, $config['methods']);
+            $this->parseMethodRoutes($collection, $config, $config['methods']);
+        } elseif (isset($config['locales'])) {
+            $this->parseLocaleRoutes($collection, $config, $config['locales']);
         } else {
             $this->parseRoute($collection, $config);
         }
@@ -282,7 +285,7 @@ final class YamlFileLoader extends FileLoader
         }
     }
 
-    private function parseMethods(RouteCollection $collection, array $config, array $methodsRoutes): void
+    private function parseMethodRoutes(RouteCollection $collection, array $config, array $methodRoutes): void
     {
         $groupUrlTemplate = $config['path'] ?? '';
         $groupDefaults = $config['defaults'] ?? [];
@@ -292,7 +295,7 @@ final class YamlFileLoader extends FileLoader
         $groupCondition = $config['condition'] ?? null;
         $groupSchemes = $config['schemes'] ?? null;
 
-        foreach ($methodsRoutes as $method => $subConfig) {
+        foreach ($methodRoutes as $method => $subConfig) {
             $method = strtoupper($method);
             $defaults = $subConfig['defaults'] ?? [];
             $requirements = $subConfig['requirements'] ?? [];
@@ -321,6 +324,28 @@ final class YamlFileLoader extends FileLoader
             $subRoute->addOptions($groupOptions);
 
             $collection->add($groupUrlTemplate . '/' . strtolower($method), $subRoute);
+        }
+    }
+
+    private function parseLocaleRoutes(RouteCollection $collection, array $config, array $localeRoutes): void
+    {
+        $canonicalUrlTemplate = $config['path'] ?? '';
+        $defaults = $config['defaults'] ?? [];
+        $requirements = $config['requirements'] ?? [];
+        $options = $config['options'] ?? [];
+        $host = $config['host'] ?? null;
+        $schemes = $config['schemes'] ?? null;
+        $condition = $config['condition'] ?? null;
+        $methods = $config['_allowed_methods'] ?? null;
+
+        $route = new Route($canonicalUrlTemplate, $defaults, $requirements, $options, $host, $schemes, $methods, $condition);
+
+        foreach ($localeRoutes as $locale => $urlTemplate) {
+            $localizedRoute = clone $route;
+            $localizedRoute->setDefault('_locale', $locale);
+            $localizedRoute->setDefault('_canonical_route', $canonicalUrlTemplate);
+            $localizedRoute->setPath($urlTemplate);
+            $collection->add($canonicalUrlTemplate . '.' . $locale, $localizedRoute);
         }
     }
 

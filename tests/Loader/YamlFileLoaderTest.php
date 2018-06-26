@@ -278,6 +278,28 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
+    public function loadRoutingLocalized()
+    {
+        $filename = 'routing-locales.yaml';
+        $routes = $this->loader->load($filename);
+        self::assertCount(2, $routes);
+
+        $en = $routes->get('/status.en');
+        self::assertInstanceOf(Route::class, $en);
+        self::assertSame('/status/en', $en->getPath());
+        self::assertSame('en', $en->getDefault('_locale'));
+        self::assertSame('/status', $en->getDefault('_canonical_route'));
+
+        $es = $routes->get('/status.es');
+        self::assertInstanceOf(Route::class, $es);
+        self::assertSame('/status/es', $es->getPath());
+        self::assertSame('es', $es->getDefault('_locale'));
+        self::assertSame('/status', $es->getDefault('_canonical_route'));
+    }
+
+    /**
+     * @test
+     */
     public function loadRoutingItem()
     {
         $filename = 'routing_items.yaml';
