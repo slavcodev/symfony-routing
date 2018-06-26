@@ -191,6 +191,54 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
+    public function thatMethodsDefinitionIsIterable()
+    {
+        $filename = 'routing_methods_iterable.yaml';
+        $expectedMessage = sprintf('The definition of the "methods" in "%s" must be a YAML array.', $filename);
+
+        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
+        $this->loader->load($filename);
+    }
+
+    /**
+     * @test
+     */
+    public function thatAmbiguousCommonMethodsAreNotAccepted()
+    {
+        $filename = 'routing_ambiguous_common_methods.yaml';
+        $expectedMessage = sprintf('The definition with the "methods" in "%s" must not specify "_allowed_methods".', $filename);
+
+        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
+        $this->loader->load($filename);
+    }
+
+    /**
+     * @test
+     */
+    public function thatMethodsDefinitionNotContainsPath()
+    {
+        $filename = 'routing_methods_with_path.yaml';
+        $expectedMessage = sprintf('The definition of the "methods" in "%s" must not specify "path".', $filename);
+
+        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
+        $this->loader->load($filename);
+    }
+
+    /**
+     * @test
+     */
+    public function thatAmbiguousMethodsAreNotAccepted()
+    {
+        $filename = 'routing_ambiguous_methods.yaml';
+        $expectedMessage = sprintf('The definition of the "methods" in "%s" must not specify "_allowed_methods".', $filename);
+
+        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
+        $this->loader->load($filename);
+    }
+
+    /**
+     * @test
+     */
     public function thatRouteNameSameAsPath()
     {
         $filename = 'routing_with_name.yaml';
@@ -206,7 +254,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function importRoutingFromExternalFiles()
     {
-        $filename = 'routing-imports.yaml';
+        $filename = 'routing_imports.yaml';
         $routes = $this->loader->load($filename);
         $route = $routes->get('/api/status');
         self::assertCount(1, $routes);
@@ -248,7 +296,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingGrouped()
     {
-        $filename = 'routing-group.yaml';
+        $filename = 'routing_group.yaml';
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('/status/ok'));
@@ -262,7 +310,25 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingMethodsGroup()
     {
-        $filename = 'routing-methods.yaml';
+        $filename = 'routing_methods.yaml';
+        $routes = $this->loader->load($filename);
+        self::assertCount(2, $routes);
+        $get = $routes->get('/status/get');
+        $put = $routes->get('/status/put');
+        self::assertInstanceOf(Route::class, $get);
+        self::assertInstanceOf(Route::class, $put);
+        self::assertSame('/status', $get->getPath());
+        self::assertSame('/status', $put->getPath());
+        self::assertSame(['GET', 'HEAD'], $get->getMethods());
+        self::assertSame(['PUT'], $put->getMethods());
+    }
+
+    /**
+     * @test
+     */
+    public function loadRoutingMethodsWithNoDetails()
+    {
+        $filename = 'routing_methods_with_no_details.yaml';
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
         $get = $routes->get('/status/get');
@@ -280,7 +346,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingLocalized()
     {
-        $filename = 'routing-locales.yaml';
+        $filename = 'routing_locales.yaml';
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
 
