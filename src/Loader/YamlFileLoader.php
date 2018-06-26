@@ -189,7 +189,6 @@ final class YamlFileLoader extends FileLoader
     {
         $collection = new RouteCollection();
         $routePrototype = $this->createRoute($commonConfig);
-        $routePrototype->setPath(rtrim($routePrototype->getPath(), '/'));
 
         $this->setCurrentDir(dirname($currentFile->getResource()));
         $imported = $this->import($filenameGlob, null, false, basename($currentFile->getResource()));
@@ -198,12 +197,6 @@ final class YamlFileLoader extends FileLoader
         }
 
         foreach ($imported as $subCollection) {
-            /** @var RouteCollection $subCollection */
-            foreach ($subCollection->all() as $name => $route) {
-                $subCollection->remove($name);
-                $subCollection->add($route->getPath(), $route);
-            }
-
             $this->extendCollection($subCollection, $routePrototype);
             $collection->addCollection($subCollection);
         }
@@ -319,6 +312,7 @@ final class YamlFileLoader extends FileLoader
     {
         if ($basePath = $routePrototype->getPath()) {
             /** @var mixed $basePath */
+            $basePath = rtrim($basePath, '/');
             $collection->addPrefix($basePath);
             $collection->addNamePrefix($basePath);
         }
