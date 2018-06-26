@@ -206,7 +206,10 @@ final class YamlFileLoader extends FileLoader
         foreach ($routes as $config) {
             $route = clone $routePrototype;
             $this->extendRoute($route, $config);
-            $route->setPath($routePrototype->getPath() . ($config['path'] ?? ''));
+
+            if (isset($config['path'])) {
+                $route->setPath($routePrototype->getPath() . $config['path']);
+            }
 
             $collection->add($route->getPath(), $route);
         }
