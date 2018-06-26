@@ -26,7 +26,6 @@ use function in_array;
 use function is_array;
 use function is_string;
 use function pathinfo;
-use function rtrim;
 use function sprintf;
 use function stream_is_local;
 
@@ -182,185 +181,147 @@ final class YamlFileLoader extends FileLoader
         }
     }
 
-    private function parseImport(RouteCollection $collection, array $config, string $filename, string $filepath): void
+    private function parseImport(RouteCollection $collection, array $commonConfig, string $filename, string $filepath): void
     {
-        $path = $config['path'] ?? '';
-        $defaults = $config['defaults'] ?? [];
-        $requirements = $config['requirements'] ?? [];
-        $options = $config['options'] ?? [];
-        $host = $config['host'] ?? null;
-        $condition = $config['condition'] ?? null;
-        $schemes = $config['schemes'] ?? null;
-        $methods = $defaults['_allowed_methods'] ?? null;
+        $routePrototype = $this->createRoute($commonConfig);
 
         $this->setCurrentDir(dirname($filepath));
 
         /** @var RouteCollection[] $imported */
-        $imported = $this->import($config['resource'], null, false, $filename);
+        $imported = $this->import($commonConfig['resource'], null, false, $filename);
         if (!is_array($imported)) {
             $imported = [$imported];
         }
 
         foreach ($imported as $subCollection) {
-            if ($path) {
-                $subCollection->addPrefix($path);
-                $subCollection->addNamePrefix($path);
-                $rootPath = (new Route($path))->getPath();
-
-                foreach ($subCollection->all() as $route) {
-                    if ($route->getPath() === $rootPath) {
-                        $route->setPath(rtrim($rootPath, '/'));
-                    }
-                }
-            }
-
-            if ($host !== null) {
-                $subCollection->setHost($host);
-            }
-
-            if ($condition !== null) {
-                $subCollection->setCondition($condition);
-            }
-
-            if ($schemes !== null) {
-                $subCollection->setSchemes($schemes);
-            }
-
-            if ($methods !== null) {
-                $subCollection->setMethods($methods);
-            }
-
-            $subCollection->addDefaults($defaults);
-            $subCollection->addRequirements($requirements);
-            $subCollection->addOptions($options);
-
+            $this->extendCollection($subCollection, $routePrototype);
             $collection->addCollection($subCollection);
         }
     }
 
-    private function parseGroup(RouteCollection $collection, array $config, array $subRoutes): void
+    private function parseGroup(RouteCollection $collection, array $groupConfig, array $routes): void
     {
-        $groupUrlTemplate = $config['path'] ?? '';
-        $groupDefaults = $config['defaults'] ?? [];
-        $groupRequirements = $config['requirements'] ?? [];
-        $groupOptions = $config['options'] ?? [];
-        $groupHost = $config['host'] ?? null;
-        $groupCondition = $config['condition'] ?? null;
-        $groupSchemes = $config['schemes'] ?? null;
-        $groupMethods = $groupDefaults['_allowed_methods'] ?? null;
+        $routePrototype = $this->createRoute($groupConfig);
 
-        foreach ($subRoutes as $subConfig) {
-            $urlTemplate = $groupUrlTemplate . ($subConfig['path'] ?? '');
-            $defaults = $subConfig['defaults'] ?? [];
-            $requirements = $subConfig['requirements'] ?? [];
-            $options = $subConfig['options'] ?? [];
-            $host = $subConfig['host'] ?? null;
-            $schemes = $subConfig['schemes'] ?? null;
-            $condition = $subConfig['condition'] ?? null;
-            $methods = $defaults['_allowed_methods'] ?? null;
+        foreach ($routes as $config) {
+            $route = clone $routePrototype;
+            $this->extendRoute($route, $config);
+            $route->setPath($routePrototype->getPath() . ($config['path'] ?? ''));
 
-            $subRoute = new Route($urlTemplate, $defaults, $requirements, $options, $host, $schemes, $methods, $condition);
-
-            if ($groupHost !== null) {
-                $subRoute->setHost($groupHost);
-            }
-
-            if ($groupCondition !== null) {
-                $subRoute->setCondition($groupCondition);
-            }
-
-            if ($groupSchemes !== null) {
-                $subRoute->setSchemes($groupSchemes);
-            }
-
-            if ($groupMethods !== null) {
-                $subRoute->setMethods($groupMethods);
-            }
-
-            $subRoute->addDefaults($groupDefaults);
-            $subRoute->addRequirements($groupRequirements);
-            $subRoute->addOptions($groupOptions);
-
-            $collection->add($urlTemplate, $subRoute);
+            $collection->add($route->getPath(), $route);
         }
     }
 
-    private function parseMethodRoutes(RouteCollection $collection, array $config, array $methodRoutes): void
+    private function parseMethodRoutes(RouteCollection $collection, array $commonConfig, array $methods): void
     {
-        $groupUrlTemplate = $config['path'] ?? '';
-        $groupDefaults = $config['defaults'] ?? [];
-        $groupRequirements = $config['requirements'] ?? [];
-        $groupOptions = $config['options'] ?? [];
-        $groupHost = $config['host'] ?? null;
-        $groupCondition = $config['condition'] ?? null;
-        $groupSchemes = $config['schemes'] ?? null;
+        $routePrototype = $this->createRoute($commonConfig);
 
-        foreach ($methodRoutes as $method => $subConfig) {
+        foreach ($methods as $method => $config) {
             $method = strtoupper($method);
-            $defaults = $subConfig['defaults'] ?? [];
-            $requirements = $subConfig['requirements'] ?? [];
-            $options = $subConfig['options'] ?? [];
-            $host = $subConfig['host'] ?? null;
-            $schemes = $subConfig['schemes'] ?? null;
-            $condition = $subConfig['condition'] ?? null;
-            $methods = $method === 'GET' ? ['GET', 'HEAD'] : [$method];
 
-            $subRoute = new Route($groupUrlTemplate, $defaults, $requirements, $options, $host, $schemes, $methods, $condition);
+            $route = clone $routePrototype;
 
-            if ($groupHost !== null) {
-                $subRoute->setHost($groupHost);
+            if ($config !== null) {
+                $this->extendRoute($route, $config);
             }
 
-            if ($groupCondition !== null) {
-                $subRoute->setCondition($groupCondition);
-            }
+            $route->setMethods($method === 'GET' ? ['GET', 'HEAD'] : [$method]);
 
-            if ($groupSchemes !== null) {
-                $subRoute->setSchemes($groupSchemes);
-            }
-
-            $subRoute->addDefaults($groupDefaults);
-            $subRoute->addRequirements($groupRequirements);
-            $subRoute->addOptions($groupOptions);
-
-            $collection->add($groupUrlTemplate . '/' . strtolower($method), $subRoute);
+            $collection->add($routePrototype->getPath() . '/' . strtolower($method), $route);
         }
     }
 
-    private function parseLocaleRoutes(RouteCollection $collection, array $config, array $localeRoutes): void
+    private function parseLocaleRoutes(RouteCollection $collection, array $config, array $localizedUrlTemplates): void
     {
-        $canonicalUrlTemplate = $config['path'] ?? '';
-        $defaults = $config['defaults'] ?? [];
-        $requirements = $config['requirements'] ?? [];
-        $options = $config['options'] ?? [];
-        $host = $config['host'] ?? null;
-        $schemes = $config['schemes'] ?? null;
-        $condition = $config['condition'] ?? null;
-        $methods = $config['_allowed_methods'] ?? null;
+        $route = $this->createRoute($config);
+        $canonicalUrlTemplate = $route->getPath();
 
-        $route = new Route($canonicalUrlTemplate, $defaults, $requirements, $options, $host, $schemes, $methods, $condition);
-
-        foreach ($localeRoutes as $locale => $urlTemplate) {
+        foreach ($localizedUrlTemplates as $locale => $urlTemplate) {
             $localizedRoute = clone $route;
             $localizedRoute->setDefault('_locale', $locale);
             $localizedRoute->setDefault('_canonical_route', $canonicalUrlTemplate);
             $localizedRoute->setPath($urlTemplate);
+
             $collection->add($canonicalUrlTemplate . '.' . $locale, $localizedRoute);
         }
     }
 
     private function parseRoute(RouteCollection $collection, array $config): void
     {
-        $urlTemplate = $config['path'] ?? '';
-        $defaults = $config['defaults'] ?? [];
-        $requirements = $config['requirements'] ?? [];
-        $options = $config['options'] ?? [];
-        $host = $config['host'] ?? null;
-        $condition = $config['condition'] ?? null;
-        $schemes = $config['schemes'] ?? null;
-        $methods = $defaults['_allowed_methods'] ?? null;
+        $route = $this->createRoute($config);
+        $collection->add($route->getPath(), $route);
+    }
 
-        $route = new Route($urlTemplate, $defaults, $requirements, $options, $host, $schemes, $methods, $condition);
-        $collection->add($urlTemplate, $route);
+    private function createRoute(array $config): Route
+    {
+        return new Route(
+            $config['path'] ?? '',
+            $config['defaults'] ?? [],
+            $config['requirements'] ?? [],
+            $config['options'] ?? [],
+            $config['host'] ?? null,
+            $config['schemes'] ?? null,
+            $config['defaults']['_allowed_methods'] ?? null,
+            $config['condition'] ?? null
+        );
+    }
+
+    private function extendRoute(Route $route, array $config): void
+    {
+        if (isset($config['host'])) {
+            $route->setHost($config['host']);
+        }
+
+        if (isset($config['condition'])) {
+            $route->setCondition($config['condition']);
+        }
+
+        if (isset($config['schemes'])) {
+            $route->setSchemes($config['schemes']);
+        }
+
+        if (isset($config['defaults']['_allowed_methods'])) {
+            $route->setMethods($config['defaults']['_allowed_methods']);
+        }
+
+        if (isset($config['defaults'])) {
+            $route->addDefaults($config['defaults']);
+        }
+
+        if (isset($config['requirements'])) {
+            $route->addRequirements($config['requirements']);
+        }
+
+        if (isset($config['options'])) {
+            $route->addOptions($config['options']);
+        }
+    }
+
+    private function extendCollection(RouteCollection $collection, Route $routePrototype)
+    {
+        if ($routePrototype->getPath()) {
+            $collection->addPrefix($routePrototype->getPath());
+            $collection->addNamePrefix($routePrototype->getPath());
+        }
+
+        if ($routePrototype->getHost()) {
+            $collection->setHost($routePrototype->getHost());
+        }
+
+        if ($routePrototype->getCondition()) {
+            $collection->setCondition($routePrototype->getCondition());
+        }
+
+        if ($routePrototype->getSchemes()) {
+            $collection->setSchemes($routePrototype->getSchemes());
+        }
+
+        if ($routePrototype->getMethods()) {
+            $collection->setMethods($routePrototype->getMethods());
+        }
+
+        $collection->addDefaults($routePrototype->getDefaults());
+        $collection->addRequirements($routePrototype->getRequirements());
+        $collection->addOptions($routePrototype->getOptions());
     }
 }

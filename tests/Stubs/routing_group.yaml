@@ -1,0 +1,32 @@
+- path: '/status'
+  host: example.org
+  schemes: ['https', 'http']
+  condition: "context.getMethod() in ['POST']"
+  defaults:
+    bar: bar
+    _allowed_methods: ['POST']
+  requirements:
+    id: \d+
+  options:
+    param: value
+  group:
+    - path: '/ok'
+      host: ok.example.org
+      schemes: ['https']
+      condition: "context.getMethod() in ['GET']"
+      options:
+        action: ok
+      requirements:
+        id: \w+
+      defaults:
+        _allowed_methods: ['GET']
+    - path: '/error'
+      host: error.example.org
+      schemes: ['https']
+      condition: "context.getMethod() in ['GET']"
+      options:
+        action: error
+      requirements:
+        id: \w+
+      defaults:
+        _allowed_methods: ['GET']
