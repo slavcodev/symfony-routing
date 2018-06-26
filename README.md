@@ -101,6 +101,32 @@ its original representation
     id: '[-\w\d]+'
 ~~~
 
+### Define localized routes
+
+Specify localized routes
+~~~yaml
+- path: '/posts/{id}'
+  requireemnts:
+    id: '[-\w\d]+'
+  defaults:
+    _controller: App\Controller\BlogApiController
+  locales:
+    en: '/en/posts/{id}'
+    es: '/es/posts/{id}'
+~~~
+
+its original representation
+~~~yaml
+/api/posts/{id}:
+  path:
+    en: '/en/posts/{id}'
+    es: '/es/posts/{id}'
+  requireemnts:
+    id: '[-\w\d]+'
+  defaults:
+    _controller: App\Controller\BlogApiController
+~~~
+
 
 ## Install
 
