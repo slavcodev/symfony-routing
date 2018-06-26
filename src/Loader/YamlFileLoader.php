@@ -19,7 +19,6 @@ use Symfony\Component\Yaml\Yaml;
 use function array_diff;
 use function array_keys;
 use function array_map;
-use function dirname;
 use function gettype;
 use function implode;
 use function in_array;
@@ -85,7 +84,7 @@ final class YamlFileLoader extends FileLoader
         $collection->addResource($file);
 
         foreach ($parsedConfig as $config) {
-            $this->parse($collection, $config, $filename, $filepath);
+            $this->parse($filename, $file, $config, $collection);
         }
 
         return $collection;
@@ -96,20 +95,25 @@ final class YamlFileLoader extends FileLoader
         return is_string($resource) && in_array(pathinfo($resource, PATHINFO_EXTENSION), ['yml', 'yaml'], true) && !$type;
     }
 
-    public function parse(RouteCollection $collection, $config, string $filename, string $filepath): void
+    public function parse(string $filename, FileResource $file, $config, RouteCollection $collection): void
     {
         $this->assertConfigItem($filename, $config);
 
         if (isset($config['resource'])) {
-            $this->parseImport($collection, $config, $filename, $filepath);
+            $importedRoutes = $this->importRoutes($file, $config['resource'], $config);
+            $collection->addCollection($importedRoutes);
         } elseif (isset($config['group'])) {
-            $this->parseGroup($collection, $config, $config['group']);
+            $groupRoutes = $this->createGroupRoutes($config['group'], $config);
+            $collection->addCollection($groupRoutes);
         } elseif (isset($config['methods'])) {
-            $this->parseMethodRoutes($collection, $config, $config['methods']);
+            $methodRoutes = $this->createMethodsRoutes($config['methods'], $config);
+            $collection->addCollection($methodRoutes);
         } elseif (isset($config['locales'])) {
-            $this->parseLocaleRoutes($collection, $config, $config['locales']);
+            $localizedRoutes = $this->createLocalizedRoutes($config['locales'], $config);
+            $collection->addCollection($localizedRoutes);
         } else {
-            $this->parseRoute($collection, $config);
+            $route = $this->createRoute($config);
+            $collection->add($route->getPath(), $route);
         }
     }
 
@@ -181,26 +185,35 @@ final class YamlFileLoader extends FileLoader
         }
     }
 
-    private function parseImport(RouteCollection $collection, array $commonConfig, string $filename, string $filepath): void
+    private function importRoutes(FileResource $currentFile, string $filenameGlob, array $commonConfig): RouteCollection
     {
+        $collection = new RouteCollection();
         $routePrototype = $this->createRoute($commonConfig);
+        $routePrototype->setPath(rtrim($routePrototype->getPath(), '/'));
 
-        $this->setCurrentDir(dirname($filepath));
-
-        /** @var RouteCollection[] $imported */
-        $imported = $this->import($commonConfig['resource'], null, false, $filename);
+        $this->setCurrentDir(dirname($currentFile->getResource()));
+        $imported = $this->import($filenameGlob, null, false, basename($currentFile->getResource()));
         if (!is_array($imported)) {
             $imported = [$imported];
         }
 
         foreach ($imported as $subCollection) {
+            /** @var RouteCollection $subCollection */
+            foreach ($subCollection->all() as $name => $route) {
+                $subCollection->remove($name);
+                $subCollection->add($route->getPath(), $route);
+            }
+
             $this->extendCollection($subCollection, $routePrototype);
             $collection->addCollection($subCollection);
         }
+
+        return $collection;
     }
 
-    private function parseGroup(RouteCollection $collection, array $groupConfig, array $routes): void
+    private function createGroupRoutes(array $routes, array $groupConfig): RouteCollection
     {
+        $collection = new RouteCollection();
         $routePrototype = $this->createRoute($groupConfig);
 
         foreach ($routes as $config) {
@@ -213,10 +226,13 @@ final class YamlFileLoader extends FileLoader
 
             $collection->add($route->getPath(), $route);
         }
+
+        return $collection;
     }
 
-    private function parseMethodRoutes(RouteCollection $collection, array $commonConfig, array $methods): void
+    private function createMethodsRoutes(array $methods, array $commonConfig): RouteCollection
     {
+        $collection = new RouteCollection();
         $routePrototype = $this->createRoute($commonConfig);
 
         foreach ($methods as $method => $config) {
@@ -232,10 +248,13 @@ final class YamlFileLoader extends FileLoader
 
             $collection->add($routePrototype->getPath() . '/' . strtolower($method), $route);
         }
+
+        return $collection;
     }
 
-    private function parseLocaleRoutes(RouteCollection $collection, array $config, array $localizedUrlTemplates): void
+    private function createLocalizedRoutes(array $localizedUrlTemplates, array $config): RouteCollection
     {
+        $collection = new RouteCollection();
         $route = $this->createRoute($config);
         $canonicalUrlTemplate = $route->getPath();
 
@@ -247,12 +266,8 @@ final class YamlFileLoader extends FileLoader
 
             $collection->add($canonicalUrlTemplate . '.' . $locale, $localizedRoute);
         }
-    }
 
-    private function parseRoute(RouteCollection $collection, array $config): void
-    {
-        $route = $this->createRoute($config);
-        $collection->add($route->getPath(), $route);
+        return $collection;
     }
 
     private function createRoute(array $config): Route
@@ -302,9 +317,10 @@ final class YamlFileLoader extends FileLoader
 
     private function extendCollection(RouteCollection $collection, Route $routePrototype)
     {
-        if ($routePrototype->getPath()) {
-            $collection->addPrefix($routePrototype->getPath());
-            $collection->addNamePrefix($routePrototype->getPath());
+        if ($basePath = $routePrototype->getPath()) {
+            /** @var mixed $basePath */
+            $collection->addPrefix($basePath);
+            $collection->addNamePrefix($basePath);
         }
 
         if ($routePrototype->getHost()) {
