@@ -310,13 +310,6 @@ final class YamlFileLoader extends FileLoader
 
     private function extendCollection(RouteCollection $collection, Route $routePrototype)
     {
-        if ($basePath = $routePrototype->getPath()) {
-            /** @var mixed $basePath */
-            $basePath = rtrim($basePath, '/');
-            $collection->addPrefix($basePath);
-            $collection->addNamePrefix($basePath);
-        }
-
         if ($routePrototype->getHost()) {
             $collection->setHost($routePrototype->getHost());
         }
@@ -333,6 +326,8 @@ final class YamlFileLoader extends FileLoader
             $collection->setMethods($routePrototype->getMethods());
         }
 
+        $collection->addPrefix($routePrototype->getPath());
+        $collection->addNamePrefix(rtrim($routePrototype->getPath(), '/'));
         $collection->addDefaults($routePrototype->getDefaults());
         $collection->addRequirements($routePrototype->getRequirements());
         $collection->addOptions($routePrototype->getOptions());
