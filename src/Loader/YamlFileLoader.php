@@ -142,8 +142,12 @@ final class YamlFileLoader extends FileLoader
         }
     }
 
-    private function importRoutes(string $filenameGlob, array $commonConfig): RouteCollection
+    private function importRoutes(string $filenameGlob, array $config): RouteCollection
     {
+        if (isset($config['type']) || isset($config['prefix']) || isset($config['name_prefix']) || isset($config['trailing_slash_on_root'])) {
+            throw new InvalidArgumentException('The keys "type", "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.');
+        }
+
         $imported = $this->import($filenameGlob);
         if (!is_array($imported)) {
             $imported = [$imported];
@@ -153,17 +157,17 @@ final class YamlFileLoader extends FileLoader
 
         foreach ($imported as $subCollection) {
             /** @var RouteCollection $subCollection */
-            if (isset($commonConfig['path'])) {
-                $subCollection->addPrefix($commonConfig['path']);
-                $subCollection->addNamePrefix(trim($commonConfig['path'], '/') . '/');
+            if (isset($config['path'])) {
+                $subCollection->addPrefix($config['path']);
+                $subCollection->addNamePrefix(trim($config['path'], '/') . '/');
             }
 
-            $this->mergeRouteHost($subCollection, $commonConfig);
-            $this->mergeRouteCondition($subCollection, $commonConfig);
-            $this->mergeRouteSchemas($subCollection, $commonConfig);
-            $this->mergeRouteDefaults($subCollection, $commonConfig);
-            $this->mergeRouteRequirements($subCollection, $commonConfig);
-            $this->mergeRouteOptions($subCollection, $commonConfig);
+            $this->mergeRouteHost($subCollection, $config);
+            $this->mergeRouteCondition($subCollection, $config);
+            $this->mergeRouteSchemas($subCollection, $config);
+            $this->mergeRouteDefaults($subCollection, $config);
+            $this->mergeRouteRequirements($subCollection, $config);
+            $this->mergeRouteOptions($subCollection, $config);
             $collection->addCollection($subCollection);
         }
 
@@ -207,8 +211,7 @@ final class YamlFileLoader extends FileLoader
         $collection = new RouteCollection();
 
         foreach ($localizedUrlTemplates as $locale => $urlTemplate) {
-            $config['path'] = $urlTemplate;
-            $config['defaults']['_locale'] = $locale;
+            $config = ['path' => $urlTemplate, 'defaults' => ['_locale' => $locale]];
             $this->parseDefinition($collection, $config, $commonConfig);
         }
 
@@ -218,7 +221,6 @@ final class YamlFileLoader extends FileLoader
     private function addRoute(RouteCollection $collection, array $config): void
     {
         $defaults = $config['defaults'] ?? [];
-        $extraKeys = array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS, $defaults);
 
         $route = new Route(
             $config['path'] ?? '',
@@ -231,7 +233,11 @@ final class YamlFileLoader extends FileLoader
             $config['condition'] ?? null
         );
 
-        $route->addDefaults($extraKeys);
+        $route->addDefaults(array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS, $defaults));
+
+        if ($route->getDefault('controller') && $route->getDefault('_controller')) {
+            throw new InvalidArgumentException('The definition must not specify both the "controller" key and the defaults key "_controller".');
+        }
 
         if ($method = $route->getDefault('_method')) {
             if ($method === 'GET') {
