@@ -15,6 +15,10 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\Routing\Route;
 
+/**
+ * @method static assertCount(int $expectedCount, $haystack, string $message = '')
+ * @method static assertInstanceOf(string $expected, $actual, string $message = '')
+ */
 class YamlFileLoaderTest extends TestCase
 {
     /**
