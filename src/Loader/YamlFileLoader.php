@@ -204,11 +204,14 @@ final class YamlFileLoader extends FileLoader
         $collection = new RouteCollection();
 
         foreach ($methods as $method => $config) {
+            if ($config === null) {
+                $config = [];
+            }
+
             Assert::methodDefinition($config);
             $method = strtoupper($method);
             $config['defaults']['_method'] = $method;
             $config['defaults']['_allowed_methods'] = $method;
-            Assert::definition($config);
             self::mergeConfigs($config, $commonConfig);
             $this->parseDefinition($collection, $config);
         }
@@ -228,8 +231,11 @@ final class YamlFileLoader extends FileLoader
         $collection = new RouteCollection();
 
         foreach ($localizedUrlTemplates as $locale => $urlTemplate) {
+            if (!is_string($urlTemplate)) {
+                throw new InvalidArgumentException('The localized path must be a string.');
+            }
+
             $config = ['path' => $urlTemplate, 'defaults' => ['_locale' => $locale]];
-            Assert::definition($config);
             self::mergeConfigs($config, $commonConfig);
             $this->parseDefinition($collection, $config);
         }
