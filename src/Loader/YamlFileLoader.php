@@ -44,12 +44,15 @@ final class YamlFileLoader extends FileLoader
 
     private $methodCollectionFactory;
 
+    private $localizedCollectionFactory;
+
     public function __construct(FileLocatorInterface $locator)
     {
         parent::__construct($locator);
         $this->yamlParser = new Parser();
         $this->routeFactory = new RouteFactory();
         $this->methodCollectionFactory = new MethodsRoutesFactory($this->routeFactory);
+        $this->localizedCollectionFactory = new LocalizedRoutesFactory($this->routeFactory);
     }
 
     public function load($filename, $type = null): RouteCollection
@@ -132,7 +135,7 @@ final class YamlFileLoader extends FileLoader
             $subCollection = $this->methodCollectionFactory->create($config['methods'], $cleanConfig);
             $collection->addCollection($subCollection);
         } elseif (isset($config['locales'])) {
-            $subCollection = $this->createLocalizedRoutes($config['locales'], $cleanConfig);
+            $subCollection = $this->localizedCollectionFactory->create($config['locales'], $cleanConfig);
             $collection->addCollection($subCollection);
         }
     }
@@ -179,30 +182,6 @@ final class YamlFileLoader extends FileLoader
             }
 
             self::mergeConfigs($config, $groupConfig);
-            $this->parseDefinition($collection, $config);
-        }
-
-        return $collection;
-    }
-
-    private function createLocalizedRoutes(array $localizedUrlTemplates, array $commonConfig): RouteCollection
-    {
-        if (!isset($commonConfig['path'])) {
-            throw new InvalidArgumentException('Missing canonical path for localized routes.');
-        }
-
-        $commonConfig['defaults']['_canonical_route'] = $commonConfig['path'];
-        unset($commonConfig['path']);
-
-        $collection = new RouteCollection();
-
-        foreach ($localizedUrlTemplates as $locale => $urlTemplate) {
-            if (!is_string($urlTemplate)) {
-                throw new InvalidArgumentException('The localized path must be a string.');
-            }
-
-            $config = ['path' => $urlTemplate, 'defaults' => ['_locale' => $locale]];
-            self::mergeConfigs($config, $commonConfig);
             $this->parseDefinition($collection, $config);
         }
 
