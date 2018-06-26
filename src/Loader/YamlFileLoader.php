@@ -100,7 +100,7 @@ final class YamlFileLoader extends FileLoader
     {
         Assert::definition($config);
 
-        if ($defaultConfig) {
+        if (!empty($defaultConfig)) {
             if (isset($defaultConfig['path'], $config['path'])) {
                 $config['path'] = trim($defaultConfig['path'], '/') . '/' . ltrim($config['path'], '/');
             }
