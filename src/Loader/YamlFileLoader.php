@@ -186,17 +186,27 @@ final class YamlFileLoader extends FileLoader
     {
         $this->assertImportDefinition($commonConfig);
 
-        $collection = new RouteCollection();
-        $routePrototype = $this->createRoute($commonConfig);
-
         $this->setCurrentDir(dirname($currentFile->getResource()));
         $imported = $this->import($filenameGlob, null, false, basename($currentFile->getResource()));
         if (!is_array($imported)) {
             $imported = [$imported];
         }
 
+        $collection = new RouteCollection();
+
         foreach ($imported as $subCollection) {
-            $this->extendCollection($subCollection, $routePrototype);
+            /** @var RouteCollection $subCollection */
+            if (isset($commonConfig['path'])) {
+                $subCollection->addPrefix($commonConfig['path']);
+                $subCollection->addNamePrefix(trim($commonConfig['path'], '/') . '/');
+            }
+
+            $this->mergeRouteHost($subCollection, $commonConfig);
+            $this->mergeRouteCondition($subCollection, $commonConfig);
+            $this->mergeRouteSchemas($subCollection, $commonConfig);
+            $this->mergeRouteDefaults($subCollection, $commonConfig);
+            $this->mergeRouteRequirements($subCollection, $commonConfig);
+            $this->mergeRouteOptions($subCollection, $commonConfig);
             $collection->addCollection($subCollection);
         }
 
@@ -290,77 +300,73 @@ final class YamlFileLoader extends FileLoader
         );
     }
 
-    private function mergeRouteHost(Route $route, array $config): void
+    /**
+     * @param Route|RouteCollection $routeOrCollection
+     * @param array $config
+     */
+    private function mergeRouteHost($routeOrCollection, array $config): void
     {
         if (isset($config['host'])) {
-            $route->setHost($config['host']);
+            $routeOrCollection->setHost($config['host']);
         }
     }
 
-    private function mergeRouteCondition(Route $route, array $config): void
+    /**
+     * @param Route|RouteCollection $routeOrCollection
+     * @param array $config
+     */
+    private function mergeRouteCondition($routeOrCollection, array $config): void
     {
         if (isset($config['condition'])) {
-            $route->setCondition($config['condition']);
+            $routeOrCollection->setCondition($config['condition']);
         }
     }
 
-    private function mergeRouteSchemas(Route $route, array $config): void
+    /**
+     * @param Route|RouteCollection $routeOrCollection
+     * @param array $config
+     */
+    private function mergeRouteSchemas($routeOrCollection, array $config): void
     {
         if (isset($config['schemes'])) {
-            $route->setSchemes($config['schemes']);
+            $routeOrCollection->setSchemes($config['schemes']);
         }
     }
 
-    private function mergeRouteDefaults(Route $route, array $config): void
+    /**
+     * @param Route|RouteCollection $routeOrCollection
+     * @param array $config
+     */
+    private function mergeRouteDefaults($routeOrCollection, array $config): void
     {
         if (isset($config['defaults'])) {
-            $route->addDefaults($config['defaults']);
+            $routeOrCollection->addDefaults($config['defaults']);
 
             if (isset($config['defaults']['_allowed_methods'])) {
-                $route->setMethods($config['defaults']['_allowed_methods']);
+                $routeOrCollection->setMethods($config['defaults']['_allowed_methods']);
             }
         }
     }
 
-    private function mergeRouteRequirements(Route $route, array $config): void
+    /**
+     * @param Route|RouteCollection $routeOrCollection
+     * @param array $config
+     */
+    private function mergeRouteRequirements($routeOrCollection, array $config): void
     {
         if (isset($config['requirements'])) {
-            $route->addRequirements($config['requirements']);
+            $routeOrCollection->addRequirements($config['requirements']);
         }
     }
 
-    private function mergeRouteOptions(Route $route, array $config): void
+    /**
+     * @param Route|RouteCollection $routeOrCollection
+     * @param array $config
+     */
+    private function mergeRouteOptions($routeOrCollection, array $config): void
     {
         if (isset($config['options'])) {
-            $route->addOptions($config['options']);
+            $routeOrCollection->addOptions($config['options']);
         }
-    }
-
-    private function extendCollection(RouteCollection $collection, Route $routePrototype)
-    {
-        if ($routePrototype->getHost()) {
-            $collection->setHost($routePrototype->getHost());
-        }
-
-        if ($routePrototype->getCondition()) {
-            $collection->setCondition($routePrototype->getCondition());
-        }
-
-        if ($routePrototype->getSchemes()) {
-            $collection->setSchemes($routePrototype->getSchemes());
-        }
-
-        if ($routePrototype->getMethods()) {
-            $collection->setMethods($routePrototype->getMethods());
-        }
-
-        if ($routePrototype->getPath() !== '/') {
-            $collection->addPrefix($routePrototype->getPath());
-            $collection->addNamePrefix(trim($routePrototype->getPath(), '/') . '/');
-        }
-
-        $collection->addDefaults($routePrototype->getDefaults());
-        $collection->addRequirements($routePrototype->getRequirements());
-        $collection->addOptions($routePrototype->getOptions());
     }
 }
