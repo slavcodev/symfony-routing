@@ -50,13 +50,6 @@ final class Assert
         }
     }
 
-    public static function importDefinition($config): void
-    {
-        if (isset($config['group']) || isset($config['methods']) || isset($config['methods'])) {
-            throw new InvalidArgumentException('The import definition must not specify the "group", "methods" or "locale" keys.');
-        }
-    }
-
     public static function definitionWithMethodsSpecification($methods, $config): void
     {
         if (!is_array($methods)) {

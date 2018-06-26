@@ -134,7 +134,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatNoWayToUseBoreThanOneAggregate()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The import definition must not specify the "group", "methods" or "locale" keys.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The definition must not specify more than one special "resource", "group", "methods" or "locale" keys.'));
         $this->loader->load('routing_with_both_resource_and_group.yaml');
     }
 
@@ -143,11 +143,8 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatPathMustBeString()
     {
-        $filename = 'routing_with_path_arrays.yaml';
-        $expectedMessage = 'The path should be a string.';
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->expectExceptionObject(new InvalidArgumentException('The path should be a string.'));
+        $this->loader->load('routing_with_path_arrays.yaml');
     }
 
     /**
@@ -206,10 +203,18 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
+    public function requireCanonicalPathForLocalizedRoutes()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for localized routes.'));
+        $this->loader->load('routing_locales_without_canonical.yaml');
+    }
+
+    /**
+     * @test
+     */
     public function thatRouteNameSameAsPath()
     {
-        $filename = 'routing_with_name.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_with_name.yaml');
         self::assertCount(1, $routes);
         self::assertNull($routes->get('get_status'));
         self::assertInstanceOf(Route::class, $routes->get('status'));
@@ -221,8 +226,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatRouteCustomKeysWillAddToDefaults()
     {
-        $filename = 'routing_item_with_custom_keys.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_item_with_custom_keys.yaml');
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('status'));
         self::assertSame(
@@ -231,7 +235,7 @@ class YamlFileLoaderTest extends TestCase
         );
         self::assertInstanceOf(Route::class, $routes->get('error'));
         self::assertSame(
-            ['foo' => 'foo', 'bar' => 'bar', 'baz' => 'baz', 'controller' => 'ErrorController'],
+            ['bar' => 'bar', 'foo' => 'foo', 'baz' => 'baz', 'controller' => 'ErrorController'],
             $routes->get('error')->getDefaults()
         );
     }
@@ -283,8 +287,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingGrouped()
     {
-        $filename = 'routing_group.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_group.yaml');
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('status/ok'));
         self::assertSame('/status/ok', $routes->get('status/ok')->getPath());
@@ -297,10 +300,9 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingMethodsGroup()
     {
-        $filename = 'routing_methods.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_methods.yaml');
         self::assertCount(2, $routes);
-        $get = $routes->get('status/get');
+        $get = $routes->get('status');
         $put = $routes->get('status/put');
         self::assertInstanceOf(Route::class, $get);
         self::assertInstanceOf(Route::class, $put);
@@ -315,10 +317,9 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingMethodsWithNoDetails()
     {
-        $filename = 'routing_methods_with_no_details.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_methods_with_no_details.yaml');
         self::assertCount(2, $routes);
-        $get = $routes->get('status/get');
+        $get = $routes->get('status');
         $put = $routes->get('status/put');
         self::assertInstanceOf(Route::class, $get);
         self::assertInstanceOf(Route::class, $put);
@@ -333,8 +334,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingLocalized()
     {
-        $filename = 'routing_locales.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_locales.yaml');
         self::assertCount(2, $routes);
 
         $en = $routes->get('status.en');
@@ -355,12 +355,30 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingItem()
     {
-        $filename = 'routing_items.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_items.yaml');
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('status'));
         self::assertSame('/status', $routes->get('status')->getPath());
         self::assertInstanceOf(Route::class, $routes->get('error'));
         self::assertSame('/error', $routes->get('error')->getPath());
+    }
+
+    /**
+     * test
+     */
+    public function loadingNestedRoutes()
+    {
+        $routes = $this->loader->load('routing_nested_items.yaml');
+        self::assertCount(2, $routes);
+        self::assertInstanceOf(Route::class, $routes->get('status'));
+        self::assertSame(
+            ['foo' => 'foo', 'bar' => 'bar', 'controller' => 'StatusController'],
+            $routes->get('status')->getDefaults()
+        );
+        self::assertInstanceOf(Route::class, $routes->get('error'));
+        self::assertSame(
+            ['foo' => 'foo', 'bar' => 'bar', 'baz' => 'baz', 'controller' => 'ErrorController'],
+            $routes->get('error')->getDefaults()
+        );
     }
 }

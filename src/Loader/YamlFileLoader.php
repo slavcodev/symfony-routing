@@ -46,6 +46,13 @@ final class YamlFileLoader extends FileLoader
         'condition' => true,
     ];
 
+    public const SPECIAL_KEYS = [
+        'resource' => true,
+        'group' => true,
+        'methods' => true,
+        'locales' => true,
+    ];
+
     public const SUPPORTED_METHODS = ['OPTIONS', 'HEAD', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 
     private $yamlParser;
@@ -78,24 +85,7 @@ final class YamlFileLoader extends FileLoader
         $collection->addResource($file);
 
         foreach ($parsedConfig as $config) {
-            Assert::definition($config);
-
-            if (isset($config['resource'])) {
-                $importedRoutes = $this->importRoutes($file, $config['resource'], $config);
-                $collection->addCollection($importedRoutes);
-            } elseif (isset($config['group'])) {
-                $groupRoutes = $this->createGroupRoutes($config['group'], $config);
-                $collection->addCollection($groupRoutes);
-            } elseif (isset($config['methods'])) {
-                $methodRoutes = $this->createMethodsRoutes($config['methods'], $config);
-                $collection->addCollection($methodRoutes);
-            } elseif (isset($config['locales'])) {
-                $localizedRoutes = $this->createLocalizedRoutes($config['locales'], $config);
-                $collection->addCollection($localizedRoutes);
-            } else {
-                $route = $this->createRoute($config);
-                $collection->add(trim($route->getPath(), '/'), $route);
-            }
+            $this->parseDefinition($collection, $file, $config, []);
         }
 
         return $collection;
@@ -106,10 +96,56 @@ final class YamlFileLoader extends FileLoader
         return is_string($resource) && in_array(pathinfo($resource, PATHINFO_EXTENSION), ['yml', 'yaml'], true) && !$type;
     }
 
+    private function parseDefinition(RouteCollection $collection, FileResource $file, $config, array $defaultConfig)
+    {
+        Assert::definition($config);
+
+        if ($defaultConfig) {
+            if (isset($defaultConfig['path'], $config['path'])) {
+                $config['path'] = trim($defaultConfig['path'], '/') . '/' . ltrim($config['path'], '/');
+            }
+
+            $config = array_merge($defaultConfig, $config);
+
+            // Recursively merge iterable keys.
+            foreach (['defaults', 'requirements', 'options'] as $iterableKey) {
+                if (isset($defaultConfig[$iterableKey], $config[$iterableKey])) {
+                    $config[$iterableKey] = array_merge($defaultConfig[$iterableKey], $config[$iterableKey]);
+                }
+            }
+        }
+
+        $specialCases = array_intersect_key($config, self::SPECIAL_KEYS);
+
+        if (count($specialCases) > 1) {
+            throw new InvalidArgumentException('The definition must not specify more than one special "resource", "group", "methods" or "locale" keys.');
+        }
+
+        if (!$specialCases) {
+            $this->addRoute($collection, $config);
+
+            return;
+        }
+
+        $config = array_diff_key($config, self::SPECIAL_KEYS);
+
+        if (isset($specialCases['resource'])) {
+            $importedRoutes = $this->importRoutes($file, $specialCases['resource'], $config);
+            $collection->addCollection($importedRoutes);
+        } elseif (isset($specialCases['group'])) {
+            $groupRoutes = $this->createGroupRoutes($file, $specialCases['group'], $config);
+            $collection->addCollection($groupRoutes);
+        } elseif (isset($specialCases['methods'])) {
+            $methodRoutes = $this->createMethodsRoutes($file, $specialCases['methods'], $config);
+            $collection->addCollection($methodRoutes);
+        } elseif (isset($specialCases['locales'])) {
+            $localizedRoutes = $this->createLocalizedRoutes($file, $specialCases['locales'], $config);
+            $collection->addCollection($localizedRoutes);
+        }
+    }
+
     private function importRoutes(FileResource $currentFile, string $filenameGlob, array $commonConfig): RouteCollection
     {
-        Assert::importDefinition($commonConfig);
-
         $this->setCurrentDir(dirname($currentFile->getResource()));
         $imported = $this->import($filenameGlob, null, false, basename($currentFile->getResource()));
         if (!is_array($imported)) {
@@ -137,99 +173,57 @@ final class YamlFileLoader extends FileLoader
         return $collection;
     }
 
-    private function createGroupRoutes(array $routes, array $groupConfig): RouteCollection
+    private function createGroupRoutes(FileResource $file, array $routes, array $groupConfig): RouteCollection
     {
         $collection = new RouteCollection();
-        $routePrototype = $this->createRoute($groupConfig);
 
         foreach ($routes as $config) {
-            $route = clone $routePrototype;
-            $this->mergeRouteHost($route, $config);
-            $this->mergeRouteCondition($route, $config);
-            $this->mergeRouteSchemas($route, $config);
-            $this->mergeRouteDefaults($route, $config);
-            $this->mergeRouteRequirements($route, $config);
-            $this->mergeRouteOptions($route, $config);
-
-            if (isset($config['path'])) {
-                $route->setPath($routePrototype->getPath() . '/' . ltrim($config['path'], '/'));
-            }
-
-            $collection->add(trim($route->getPath(), '/'), $route);
+            $this->parseDefinition($collection, $file, $config, $groupConfig);
         }
 
         return $collection;
     }
 
-    private function createMethodsRoutes($methods, array $commonConfig): RouteCollection
+    private function createMethodsRoutes(FileResource $file, $methods, array $commonConfig): RouteCollection
     {
         Assert::definitionWithMethodsSpecification($methods, $commonConfig);
-
         $collection = new RouteCollection();
-        $routePrototype = $this->createRoute($commonConfig);
 
         foreach ($methods as $method => $config) {
             Assert::methodDefinition($config);
-
-            $method = strtoupper($method);
-
-            $route = clone $routePrototype;
-
-            if ($config !== null) {
-                $this->mergeRouteHost($route, $config);
-                $this->mergeRouteCondition($route, $config);
-                $this->mergeRouteSchemas($route, $config);
-                $this->mergeRouteDefaults($route, $config);
-                $this->mergeRouteRequirements($route, $config);
-                $this->mergeRouteOptions($route, $config);
-            }
-
-            $route->setMethods($method === 'GET' ? ['GET', 'HEAD'] : [$method]);
-
-            $collection->add(trim($routePrototype->getPath(), '/') . '/' . strtolower($method), $route);
+            $config['defaults']['_method'] = strtoupper($method);
+            $this->parseDefinition($collection, $file, $config, $commonConfig);
         }
 
         return $collection;
     }
 
-    private function createLocalizedRoutes(array $localizedUrlTemplates, array $config): RouteCollection
+    private function createLocalizedRoutes(FileResource $file, array $localizedUrlTemplates, array $commonConfig): RouteCollection
     {
+        if (!isset($commonConfig['path'])) {
+            throw new InvalidArgumentException('Missing canonical path for localized routes.');
+        }
+
+        $commonConfig['defaults']['_canonical_route'] = $commonConfig['path'];
+        unset($commonConfig['path']);
+
         $collection = new RouteCollection();
-        $route = $this->createRoute($config);
-        $canonicalUrlTemplate = $route->getPath();
 
         foreach ($localizedUrlTemplates as $locale => $urlTemplate) {
-            $localizedRoute = clone $route;
-            $localizedRoute->setDefault('_locale', $locale);
-            $localizedRoute->setDefault('_canonical_route', $canonicalUrlTemplate);
-            $localizedRoute->setPath($urlTemplate);
-
-            $collection->add(trim($canonicalUrlTemplate, '/') . '.' . $locale, $localizedRoute);
+            $config['path'] = $urlTemplate;
+            $config['defaults']['_locale'] = $locale;
+            $this->parseDefinition($collection, $file, $config, $commonConfig);
         }
 
         return $collection;
     }
 
-    private function createRoute(array $config): Route
+    private function addRoute(RouteCollection $collection, array $config): void
     {
         $defaults = $config['defaults'] ?? [];
+        $extraKeys = array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS, $defaults);
 
-        if ($extraKeys = array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS)) {
-            $defaults += $extraKeys;
-
-            return new Route(
-                $config['path'] ?? '',
-                $defaults,
-                $config['requirements'] ?? [],
-                $config['options'] ?? [],
-                $config['host'] ?? null,
-                $config['schemes'] ?? null,
-                $defaults['_allowed_methods'] ?? null,
-                $config['condition'] ?? null
-            );
-        }
-
-        return new Route(
+        $route = new Route(
             $config['path'] ?? '',
             $defaults,
             $config['requirements'] ?? [],
@@ -239,6 +233,27 @@ final class YamlFileLoader extends FileLoader
             $defaults['_allowed_methods'] ?? null,
             $config['condition'] ?? null
         );
+
+        $route->addDefaults($extraKeys);
+
+        if ($method = $route->getDefault('_method')) {
+            if ($method === 'GET') {
+                $routeNameSuffix = '';
+                $route->setMethods(['GET', 'HEAD']);
+            } else {
+                $routeNameSuffix = '/' . strtolower($method);
+                $route->setMethods([$method]);
+            }
+
+            $routeName = trim($route->getPath(), '/') . $routeNameSuffix;
+            $route->addDefaults(['_allowed_methods' => $route->getMethods()]);
+        } elseif ($locale = $route->getDefault('_locale')) {
+            $routeName = trim($route->getDefault('_canonical_route'), '/') . '.' . $locale;
+        } else {
+            $routeName = trim($route->getPath(), '/');
+        }
+
+        $collection->add($routeName, $route);
     }
 
     /**
@@ -280,14 +295,6 @@ final class YamlFileLoader extends FileLoader
      */
     private function mergeRouteDefaults($routeOrCollection, array $config): void
     {
-        if ($extraKeys = array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS)) {
-            if (isset($config['defaults'])) {
-                $config['defaults'] += $extraKeys;
-            } else {
-                $config['defaults'] = $extraKeys;
-            }
-        }
-
         if (isset($config['defaults'])) {
             $routeOrCollection->addDefaults($config['defaults']);
 
