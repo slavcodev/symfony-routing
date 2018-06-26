@@ -205,7 +205,12 @@ final class YamlFileLoader extends FileLoader
 
         foreach ($routes as $config) {
             $route = clone $routePrototype;
-            $this->extendRoute($route, $config);
+            $this->mergeRouteHost($route, $config);
+            $this->mergeRouteCondition($route, $config);
+            $this->mergeRouteSchemas($route, $config);
+            $this->mergeRouteDefaults($route, $config);
+            $this->mergeRouteRequirements($route, $config);
+            $this->mergeRouteOptions($route, $config);
 
             if (isset($config['path'])) {
                 $route->setPath($routePrototype->getPath() . $config['path']);
@@ -232,7 +237,12 @@ final class YamlFileLoader extends FileLoader
             $route = clone $routePrototype;
 
             if ($config !== null) {
-                $this->extendRoute($route, $config);
+                $this->mergeRouteHost($route, $config);
+                $this->mergeRouteCondition($route, $config);
+                $this->mergeRouteSchemas($route, $config);
+                $this->mergeRouteDefaults($route, $config);
+                $this->mergeRouteRequirements($route, $config);
+                $this->mergeRouteOptions($route, $config);
             }
 
             $route->setMethods($method === 'GET' ? ['GET', 'HEAD'] : [$method]);
@@ -275,32 +285,47 @@ final class YamlFileLoader extends FileLoader
         );
     }
 
-    private function extendRoute(Route $route, array $config): void
+    private function mergeRouteHost(Route $route, array $config): void
     {
         if (isset($config['host'])) {
             $route->setHost($config['host']);
         }
+    }
 
+    private function mergeRouteCondition(Route $route, array $config): void
+    {
         if (isset($config['condition'])) {
             $route->setCondition($config['condition']);
         }
+    }
 
+    private function mergeRouteSchemas(Route $route, array $config): void
+    {
         if (isset($config['schemes'])) {
             $route->setSchemes($config['schemes']);
         }
+    }
 
-        if (isset($config['defaults']['_allowed_methods'])) {
-            $route->setMethods($config['defaults']['_allowed_methods']);
-        }
-
+    private function mergeRouteDefaults(Route $route, array $config): void
+    {
         if (isset($config['defaults'])) {
             $route->addDefaults($config['defaults']);
-        }
 
+            if (isset($config['defaults']['_allowed_methods'])) {
+                $route->setMethods($config['defaults']['_allowed_methods']);
+            }
+        }
+    }
+
+    private function mergeRouteRequirements(Route $route, array $config): void
+    {
         if (isset($config['requirements'])) {
             $route->addRequirements($config['requirements']);
         }
+    }
 
+    private function mergeRouteOptions(Route $route, array $config): void
+    {
         if (isset($config['options'])) {
             $route->addOptions($config['options']);
         }
