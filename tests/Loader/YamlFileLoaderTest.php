@@ -123,15 +123,6 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
-    public function thatAmbiguousControllerSettingWontWork()
-    {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition must not specify both the "controller" key and the defaults key "_controller".'));
-        $this->loader->load('routing_with_ambiguous_controller.yaml');
-    }
-
-    /**
-     * @test
-     */
     public function thatNoWayToUseBoreThanOneAggregate()
     {
         $this->expectExceptionObject(new InvalidArgumentException('The definition must not specify more than one special "resource", "group", "methods" or "locale" keys.'));
@@ -309,7 +300,7 @@ class YamlFileLoaderTest extends TestCase
         self::assertInstanceOf(Route::class, $put);
         self::assertSame('/status', $get->getPath());
         self::assertSame('/status', $put->getPath());
-        self::assertSame(['GET', 'HEAD'], $get->getMethods());
+        self::assertSame(['GET'], $get->getMethods());
         self::assertSame(['PUT'], $put->getMethods());
     }
 
@@ -326,7 +317,7 @@ class YamlFileLoaderTest extends TestCase
         self::assertInstanceOf(Route::class, $put);
         self::assertSame('/status', $get->getPath());
         self::assertSame('/status', $put->getPath());
-        self::assertSame(['GET', 'HEAD'], $get->getMethods());
+        self::assertSame(['GET'], $get->getMethods());
         self::assertSame(['PUT'], $put->getMethods());
     }
 

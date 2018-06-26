@@ -191,11 +191,19 @@ final class YamlFileLoader extends FileLoader
     private function createMethodsRoutes($methods, array $commonConfig): RouteCollection
     {
         Assert::definitionWithMethodsSpecification($methods, $commonConfig);
+        if (!isset($commonConfig['path'])) {
+            throw new InvalidArgumentException('Missing canonical path for localized routes.');
+        }
+
+        $commonConfig['defaults']['_canonical_route'] = $commonConfig['path'];
+
         $collection = new RouteCollection();
 
         foreach ($methods as $method => $config) {
             Assert::methodDefinition($config);
-            $config['defaults']['_method'] = strtoupper($method);
+            $method = strtoupper($method);
+            $config['defaults']['_method'] = $method;
+            $config['defaults']['_allowed_methods'] = $method;
             $this->parseDefinition($collection, $config, $commonConfig);
         }
 
