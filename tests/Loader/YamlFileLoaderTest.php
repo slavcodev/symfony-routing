@@ -230,12 +230,12 @@ class YamlFileLoaderTest extends TestCase
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('status'));
         self::assertSame(
-            ['foo' => 'foo', 'bar' => 'bar', 'controller' => 'StatusController'],
+            ['foo' => 'foo', 'bar' => 'bar', 'controller' => 'StatusController', '_route' => 'status'],
             $routes->get('status')->getDefaults()
         );
         self::assertInstanceOf(Route::class, $routes->get('error'));
         self::assertSame(
-            ['bar' => 'bar', 'foo' => 'foo', 'baz' => 'baz', 'controller' => 'ErrorController'],
+            ['bar' => 'bar', 'foo' => 'foo', 'baz' => 'baz', 'controller' => 'ErrorController', '_route' => 'error'],
             $routes->get('error')->getDefaults()
         );
     }
@@ -276,6 +276,7 @@ class YamlFileLoaderTest extends TestCase
             [
                 'bar' => 'bar',
                 '_allowed_methods' => ['GET', 'HEAD'],
+                '_route' => 'status',
                 '_controller' => 'FooController',
             ],
             $route->getDefaults()

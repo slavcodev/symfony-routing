@@ -23,7 +23,6 @@ use function is_string;
 use function ltrim;
 use function pathinfo;
 use function sprintf;
-use function strtolower;
 use function strtoupper;
 use function trim;
 
@@ -56,10 +55,13 @@ final class YamlFileLoader extends FileLoader
 
     private $yamlParser;
 
+    private $routeFactory;
+
     public function __construct(FileLocatorInterface $locator)
     {
         parent::__construct($locator);
         $this->yamlParser = new Parser();
+        $this->routeFactory = new RouteFactory();
     }
 
     public function load($filename, $type = null): RouteCollection
@@ -118,7 +120,8 @@ final class YamlFileLoader extends FileLoader
         $cleanConfig = array_diff_key($config, self::SPECIAL_KEYS);
 
         if ($cleanConfig === $config) {
-            $this->addRoute($collection, $config);
+            $route = $this->routeFactory->create($config);
+            $collection->add($route->getDefault('_route'), $route);
 
             return;
         }
@@ -216,47 +219,6 @@ final class YamlFileLoader extends FileLoader
         }
 
         return $collection;
-    }
-
-    private function addRoute(RouteCollection $collection, array $config): void
-    {
-        $defaults = $config['defaults'] ?? [];
-
-        $route = new Route(
-            $config['path'] ?? '',
-            $defaults,
-            $config['requirements'] ?? [],
-            $config['options'] ?? [],
-            $config['host'] ?? null,
-            $config['schemes'] ?? null,
-            $defaults['_allowed_methods'] ?? null,
-            $config['condition'] ?? null
-        );
-
-        $route->addDefaults(array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS, $defaults));
-
-        if ($route->getDefault('controller') && $route->getDefault('_controller')) {
-            throw new InvalidArgumentException('The definition must not specify both the "controller" key and the defaults key "_controller".');
-        }
-
-        if ($method = $route->getDefault('_method')) {
-            if ($method === 'GET') {
-                $routeNameSuffix = '';
-                $route->setMethods(['GET', 'HEAD']);
-            } else {
-                $routeNameSuffix = '/' . strtolower($method);
-                $route->setMethods([$method]);
-            }
-
-            $routeName = trim($route->getPath(), '/') . $routeNameSuffix;
-            $route->addDefaults(['_allowed_methods' => $route->getMethods()]);
-        } elseif ($locale = $route->getDefault('_locale')) {
-            $routeName = trim($route->getDefault('_canonical_route'), '/') . '.' . $locale;
-        } else {
-            $routeName = trim($route->getPath(), '/');
-        }
-
-        $collection->add($routeName, $route);
     }
 
     /**
