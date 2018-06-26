@@ -225,9 +225,15 @@ class YamlFileLoaderTest extends TestCase
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('status'));
-        self::assertSame(['foo' => 'foo'], $routes->get('status')->getDefaults());
+        self::assertSame(
+            ['foo' => 'foo', 'bar' => 'bar', 'controller' => 'StatusController'],
+            $routes->get('status')->getDefaults()
+        );
         self::assertInstanceOf(Route::class, $routes->get('error'));
-        self::assertSame(['foo' => 'foo', 'bar' => 'bar'], $routes->get('error')->getDefaults());
+        self::assertSame(
+            ['foo' => 'foo', 'bar' => 'bar', 'baz' => 'baz', 'controller' => 'ErrorController'],
+            $routes->get('error')->getDefaults()
+        );
     }
 
     /**
