@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Slavcodev\Symfony\Routing\Loader;
 
+use InvalidArgumentException;
 use Symfony\Component\Routing\Route;
 use function array_diff_key;
 use function strtolower;
@@ -16,8 +17,14 @@ final class RouteFactory
 {
     public function create(array $config): Route
     {
+        $path = $config['path'] ?? '';
+
+        if (!is_string($path)) {
+            throw new InvalidArgumentException('The path must be a string.');
+        }
+
         $route = new Route(
-            $config['path'] ?? '',
+            $path,
             $config['defaults'] ?? [],
             $config['requirements'] ?? [],
             $config['options'] ?? [],

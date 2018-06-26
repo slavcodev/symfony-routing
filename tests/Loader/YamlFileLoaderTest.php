@@ -134,7 +134,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatPathMustBeString()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The path should be a string.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The path must be a string.'));
         $this->loader->load('routing_with_path_arrays.yaml');
     }
 
@@ -143,15 +143,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatOldMethodsFormatWontWork()
     {
-        $this->expectExceptionObject(
-            new InvalidArgumentException(
-                sprintf(
-                    'Unsupported methods definition: "%s". Expected one of: "%s".',
-                    implode('", "', [0, 1]),
-                    implode('", "', YamlFileLoader::SUPPORTED_METHODS)
-                )
-            )
-        );
+        $this->expectExceptionObject(new InvalidArgumentException('The each definition must be a YAML array.'));
         $this->loader->load('routing_with_deprecated_methods_format.yaml');
     }
 
@@ -194,10 +186,28 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
+    public function requireCanonicalPathForMethodsRoutes()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for methods routes.'));
+        $this->loader->load('routing_methods_without_canonical.yaml');
+    }
+
+    /**
+     * @test
+     */
     public function requireCanonicalPathForLocalizedRoutes()
     {
         $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for localized routes.'));
         $this->loader->load('routing_locales_without_canonical.yaml');
+    }
+
+    /**
+     * @test
+     */
+    public function requirePathForLocalizedRoute()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('The localized path must be a string.'));
+        $this->loader->load('routing_locales_without_path.yaml');
     }
 
     /**

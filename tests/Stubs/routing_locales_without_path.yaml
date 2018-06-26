@@ -1,0 +1,4 @@
+- path: 'status'
+  locales:
+    en: false
+    es: '/status/es'

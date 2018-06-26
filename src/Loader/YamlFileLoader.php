@@ -17,12 +17,14 @@ use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Yaml;
 use function dirname;
+use function gettype;
 use function in_array;
 use function is_array;
 use function is_string;
 use function ltrim;
 use function pathinfo;
 use function sprintf;
+use function stream_is_local;
 use function strtoupper;
 use function trim;
 
@@ -68,7 +70,13 @@ final class YamlFileLoader extends FileLoader
     {
         $filepath = $this->locator->locate($filename);
 
-        Assert::fileResource($filepath);
+        if (!is_string($filepath)) {
+            throw new InvalidArgumentException(sprintf('Got "%s" but expected the string.', gettype($filepath)));
+        }
+
+        if (!stream_is_local($filepath)) {
+            throw new InvalidArgumentException(sprintf('This is not a local file "%s".', $filepath));
+        }
 
         $file = new FileResource($filepath);
 
@@ -82,14 +90,10 @@ final class YamlFileLoader extends FileLoader
             throw new InvalidArgumentException(sprintf('The file "%s" must contain a YAML array.', $filepath));
         }
 
-        $collection = new RouteCollection();
-        $collection->addResource($file);
         $this->setCurrentDir(dirname($file->getResource()));
 
-        foreach ($parsedConfig as $config) {
-            Assert::definition($config);
-            $this->parseDefinition($collection, $config);
-        }
+        $collection = $this->createGroupRoutes($parsedConfig, []);
+        $collection->addResource($file);
 
         return $collection;
     }
@@ -184,7 +188,10 @@ final class YamlFileLoader extends FileLoader
         $collection = new RouteCollection();
 
         foreach ($routes as $config) {
-            Assert::definition($config);
+            if (!is_array($config)) {
+                throw new InvalidArgumentException('The each definition must be a YAML array.');
+            }
+
             self::mergeConfigs($config, $groupConfig);
             $this->parseDefinition($collection, $config);
         }
@@ -194,9 +201,16 @@ final class YamlFileLoader extends FileLoader
 
     private function createMethodsRoutes($methods, array $commonConfig): RouteCollection
     {
-        Assert::definitionWithMethodsSpecification($methods, $commonConfig);
+        if (!is_array($methods)) {
+            throw new InvalidArgumentException('The definition of the "methods" must be a YAML array.');
+        }
+
+        if (isset($commonConfig['defaults']['_allowed_methods'])) {
+            throw new InvalidArgumentException('The definition with the "methods" must not specify "_allowed_methods".');
+        }
+
         if (!isset($commonConfig['path'])) {
-            throw new InvalidArgumentException('Missing canonical path for localized routes.');
+            throw new InvalidArgumentException('Missing canonical path for methods routes.');
         }
 
         $commonConfig['defaults']['_canonical_route'] = $commonConfig['path'];
@@ -208,7 +222,18 @@ final class YamlFileLoader extends FileLoader
                 $config = [];
             }
 
-            Assert::methodDefinition($config);
+            if (!is_array($config)) {
+                throw new InvalidArgumentException('The each definition must be a YAML array.');
+            }
+
+            if (isset($config['path'])) {
+                throw new InvalidArgumentException('The definition of the "methods" must not specify "path".');
+            }
+
+            if (isset($config['defaults']['_allowed_methods'])) {
+                throw new InvalidArgumentException('The definition of the "methods" must not specify "_allowed_methods".');
+            }
+
             $method = strtoupper($method);
             $config['defaults']['_method'] = $method;
             $config['defaults']['_allowed_methods'] = $method;
