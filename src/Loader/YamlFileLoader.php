@@ -16,19 +16,13 @@ use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Yaml;
-use function array_diff;
-use function array_keys;
-use function array_map;
 use function basename;
 use function dirname;
-use function gettype;
-use function implode;
 use function in_array;
 use function is_array;
 use function is_string;
 use function pathinfo;
 use function sprintf;
-use function stream_is_local;
 use function strtolower;
 use function strtoupper;
 use function trim;
@@ -65,7 +59,7 @@ final class YamlFileLoader extends FileLoader
     {
         $filepath = $this->locator->locate($filename);
 
-        $this->assertFileResource($filepath);
+        Assert::fileResource($filepath);
 
         $file = new FileResource($filepath);
 
@@ -83,7 +77,7 @@ final class YamlFileLoader extends FileLoader
         $collection->addResource($file);
 
         foreach ($parsedConfig as $config) {
-            $this->assertDefinition($config);
+            Assert::definition($config);
 
             if (isset($config['resource'])) {
                 $importedRoutes = $this->importRoutes($file, $config['resource'], $config);
@@ -111,80 +105,9 @@ final class YamlFileLoader extends FileLoader
         return is_string($resource) && in_array(pathinfo($resource, PATHINFO_EXTENSION), ['yml', 'yaml'], true) && !$type;
     }
 
-    private function assertFileResource($filepath): void
-    {
-        if (!is_string($filepath)) {
-            throw new InvalidArgumentException(sprintf('Got "%s" but expected the string.', gettype($filepath)));
-        }
-
-        if (!stream_is_local($filepath)) {
-            throw new InvalidArgumentException(sprintf('This is not a local file "%s".', $filepath));
-        }
-    }
-
-    private function assertDefinition($config): void
-    {
-        if (!is_array($config)) {
-            throw new InvalidArgumentException('The each definition must be a YAML array.');
-        }
-
-        if ($extraKeys = array_diff(array_keys($config), self::SUPPORTED_KEYS)) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Definition contains unsupported keys: "%s". Expected one of: "%s".',
-                    implode('", "', $extraKeys),
-                    implode('", "', self::SUPPORTED_KEYS)
-                )
-            );
-        }
-
-        if (isset($config['path']) && is_array($config['path'])) {
-            throw new InvalidArgumentException('The path should be a string.');
-        }
-    }
-
-    private function assertImportDefinition($config): void
-    {
-        if (isset($config['group']) || isset($config['methods']) || isset($config['methods'])) {
-            throw new InvalidArgumentException('The import definition must not specify the "group", "methods" or "locale" keys.');
-        }
-    }
-
-    private function assertDefinitionWithMethodsSpecification($methods, $config): void
-    {
-        if (!is_array($methods)) {
-            throw new InvalidArgumentException('The definition of the "methods" must be a YAML array.');
-        }
-
-        if (isset($config['defaults']['_allowed_methods'])) {
-            throw new InvalidArgumentException('The definition with the "methods" must not specify "_allowed_methods".');
-        }
-
-        if ($extraMethods = array_diff(array_map('strtoupper', array_keys($methods)), self::SUPPORTED_METHODS)) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Unsupported methods definition: "%s". Expected one of: "%s".',
-                    implode('", "', $extraMethods),
-                    implode('", "', self::SUPPORTED_METHODS)
-                )
-            );
-        }
-    }
-
-    private function assertMethodDefinition($config): void
-    {
-        if (isset($config['path'])) {
-            throw new InvalidArgumentException('The definition of the "methods" must not specify "path".');
-        }
-
-        if (isset($config['defaults']['_allowed_methods'])) {
-            throw new InvalidArgumentException('The definition of the "methods" must not specify "_allowed_methods".');
-        }
-    }
-
     private function importRoutes(FileResource $currentFile, string $filenameGlob, array $commonConfig): RouteCollection
     {
-        $this->assertImportDefinition($commonConfig);
+        Assert::importDefinition($commonConfig);
 
         $this->setCurrentDir(dirname($currentFile->getResource()));
         $imported = $this->import($filenameGlob, null, false, basename($currentFile->getResource()));
@@ -239,13 +162,13 @@ final class YamlFileLoader extends FileLoader
 
     private function createMethodsRoutes($methods, array $commonConfig): RouteCollection
     {
-        $this->assertDefinitionWithMethodsSpecification($methods, $commonConfig);
+        Assert::definitionWithMethodsSpecification($methods, $commonConfig);
 
         $collection = new RouteCollection();
         $routePrototype = $this->createRoute($commonConfig);
 
         foreach ($methods as $method => $config) {
-            $this->assertMethodDefinition($config);
+            Assert::methodDefinition($config);
 
             $method = strtoupper($method);
 
