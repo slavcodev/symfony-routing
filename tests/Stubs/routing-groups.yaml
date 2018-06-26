@@ -1,3 +1,0 @@
-# Include external routes
-- resource: routing.yaml
-  name_prefix: '/new'

@@ -1,0 +1,2 @@
+- path: '/status'
+  controller: 'App\Controller\StatusApiController'
