@@ -12,7 +12,7 @@ use Symfony\Component\Routing\RouteCollection;
 use function is_array;
 use function strtoupper;
 
-final class MethodCollectionFactory implements CollectionFactory
+final class MethodsRoutesFactory implements CollectionFactory
 {
     private $routeFactory;
 

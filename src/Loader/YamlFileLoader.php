@@ -29,22 +29,6 @@ use function trim;
 
 final class YamlFileLoader extends FileLoader
 {
-    public const SUPPORTED_KEYS = [
-        // Keys which specify parsing behavior
-        'resource' => true,
-        'group' => true,
-        'methods' => true,
-        'locales' => true,
-        // Route definition keys
-        'path' => true,
-        'host' => true,
-        'schemes' => true,
-        'defaults' => true,
-        'requirements' => true,
-        'options' => true,
-        'condition' => true,
-    ];
-
     public const SPECIAL_KEYS = [
         'resource' => true,
         'group' => true,
@@ -65,7 +49,7 @@ final class YamlFileLoader extends FileLoader
         parent::__construct($locator);
         $this->yamlParser = new Parser();
         $this->routeFactory = new RouteFactory();
-        $this->methodCollectionFactory = new MethodCollectionFactory($this->routeFactory);
+        $this->methodCollectionFactory = new MethodsRoutesFactory($this->routeFactory);
     }
 
     public function load($filename, $type = null): RouteCollection

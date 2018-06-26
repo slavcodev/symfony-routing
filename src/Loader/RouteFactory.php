@@ -15,6 +15,16 @@ use function trim;
 
 final class RouteFactory
 {
+    private const SUPPORTED_KEYS = [
+        'path' => true,
+        'host' => true,
+        'schemes' => true,
+        'defaults' => true,
+        'requirements' => true,
+        'options' => true,
+        'condition' => true,
+    ];
+
     public function create(array $config): Route
     {
         $path = $config['path'] ?? '';
@@ -34,7 +44,7 @@ final class RouteFactory
             $config['condition'] ?? null
         );
 
-        $route->addDefaults(array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS, $route->getDefaults()));
+        $route->addDefaults(array_diff_key($config, self::SUPPORTED_KEYS, $route->getDefaults()));
         $route->setMethods($route->getDefault('_allowed_methods'));
         $route->addDefaults(['_route' => $this->pickRouteName($route)]);
 
