@@ -87,7 +87,8 @@ final class YamlFileLoader extends FileLoader
         $this->setCurrentDir(dirname($file->getResource()));
 
         foreach ($parsedConfig as $config) {
-            $this->parseDefinition($collection, $config, []);
+            Assert::definition($config);
+            $this->parseDefinition($collection, $config);
         }
 
         return $collection;
@@ -98,10 +99,8 @@ final class YamlFileLoader extends FileLoader
         return is_string($resource) && in_array(pathinfo($resource, PATHINFO_EXTENSION), ['yml', 'yaml'], true) && !$type;
     }
 
-    private function parseDefinition(RouteCollection $collection, $config, array $defaultConfig)
+    private function mergeConfigs(array &$config, array $defaultConfig)
     {
-        Assert::definition($config);
-
         if (!empty($defaultConfig)) {
             if (isset($defaultConfig['path'], $config['path'])) {
                 $config['path'] = trim($defaultConfig['path'], '/') . '/' . ltrim($config['path'], '/');
@@ -116,7 +115,10 @@ final class YamlFileLoader extends FileLoader
                 }
             }
         }
+    }
 
+    private function parseDefinition(RouteCollection $collection, $config)
+    {
         $cleanConfig = array_diff_key($config, self::SPECIAL_KEYS);
 
         if ($cleanConfig === $config) {
@@ -182,7 +184,9 @@ final class YamlFileLoader extends FileLoader
         $collection = new RouteCollection();
 
         foreach ($routes as $config) {
-            $this->parseDefinition($collection, $config, $groupConfig);
+            Assert::definition($config);
+            self::mergeConfigs($config, $groupConfig);
+            $this->parseDefinition($collection, $config);
         }
 
         return $collection;
@@ -204,7 +208,9 @@ final class YamlFileLoader extends FileLoader
             $method = strtoupper($method);
             $config['defaults']['_method'] = $method;
             $config['defaults']['_allowed_methods'] = $method;
-            $this->parseDefinition($collection, $config, $commonConfig);
+            Assert::definition($config);
+            self::mergeConfigs($config, $commonConfig);
+            $this->parseDefinition($collection, $config);
         }
 
         return $collection;
@@ -223,7 +229,9 @@ final class YamlFileLoader extends FileLoader
 
         foreach ($localizedUrlTemplates as $locale => $urlTemplate) {
             $config = ['path' => $urlTemplate, 'defaults' => ['_locale' => $locale]];
-            $this->parseDefinition($collection, $config, $commonConfig);
+            Assert::definition($config);
+            self::mergeConfigs($config, $commonConfig);
+            $this->parseDefinition($collection, $config);
         }
 
         return $collection;
