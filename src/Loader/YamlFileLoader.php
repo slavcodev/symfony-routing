@@ -32,18 +32,18 @@ final class YamlFileLoader extends FileLoader
 {
     public const SUPPORTED_KEYS = [
         // Keys which specify parsing behavior
-        'resource',
-        'group',
-        'methods',
-        'locales',
+        'resource' => true,
+        'group' => true,
+        'methods' => true,
+        'locales' => true,
         // Route definition keys
-        'path',
-        'host',
-        'schemes',
-        'defaults',
-        'requirements',
-        'options',
-        'condition',
+        'path' => true,
+        'host' => true,
+        'schemes' => true,
+        'defaults' => true,
+        'requirements' => true,
+        'options' => true,
+        'condition' => true,
     ];
 
     public const SUPPORTED_METHODS = ['OPTIONS', 'HEAD', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
@@ -79,6 +79,15 @@ final class YamlFileLoader extends FileLoader
 
         foreach ($parsedConfig as $config) {
             Assert::definition($config);
+
+            if ($extraKeys = array_diff_key($config, YamlFileLoader::SUPPORTED_KEYS)) {
+                $config = array_intersect_key($config, YamlFileLoader::SUPPORTED_KEYS);
+                if (!isset($config['defaults'])) {
+                    $config['defaults'] = $extraKeys;
+                } else {
+                    $config['defaults'] = array_merge($config['defaults'], $extraKeys);
+                }
+            }
 
             if (isset($config['resource'])) {
                 $importedRoutes = $this->importRoutes($file, $config['resource'], $config);

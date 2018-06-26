@@ -1,0 +1,7 @@
+- path: '/status'
+  foo: foo
+- path: '/error'
+  defaults:
+    foo: foo
+  bar: bar
+

@@ -37,18 +37,16 @@ final class Assert
             throw new InvalidArgumentException('The each definition must be a YAML array.');
         }
 
-        if ($extraKeys = array_diff(array_keys($config), YamlFileLoader::SUPPORTED_KEYS)) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Definition contains unsupported keys: "%s". Expected one of: "%s".',
-                    implode('", "', $extraKeys),
-                    implode('", "', YamlFileLoader::SUPPORTED_KEYS)
-                )
-            );
+        if (isset($config['resource']) && (isset($config['type']) || isset($config['prefix']) || isset($config['name_prefix']) || isset($config['trailing_slash_on_root']))) {
+            throw new InvalidArgumentException('The keys "type", "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.');
         }
 
         if (isset($config['path']) && is_array($config['path'])) {
             throw new InvalidArgumentException('The path should be a string.');
+        }
+
+        if (isset($config['controller']) && isset($config['defaults']['_controller'])) {
+            throw new InvalidArgumentException('The definition must not specify both the "controller" key and the defaults key "_controller".');
         }
     }
 

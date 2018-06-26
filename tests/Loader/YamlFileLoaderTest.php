@@ -116,33 +116,17 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatDeprecatedKeysOfTheImportWontWork()
     {
-        $this->expectExceptionObject(
-            new InvalidArgumentException(
-                sprintf(
-                    'Definition contains unsupported keys: "%s". Expected one of: "%s".',
-                    implode('", "', ['prefix', 'name_prefix', 'type', 'trailing_slash_on_root']),
-                    implode('", "', YamlFileLoader::SUPPORTED_KEYS)
-                )
-            )
-        );
+        $this->expectExceptionObject(new InvalidArgumentException('The keys "type", "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.'));
         $this->loader->load('routing_imports_with_deprecated_keys.yaml');
     }
 
     /**
      * @test
      */
-    public function thatDeprecatedKeysOfTheRouteWontWork()
+    public function thatAmbiguousControllerSettingWontWork()
     {
-        $this->expectExceptionObject(
-            new InvalidArgumentException(
-                sprintf(
-                    'Definition contains unsupported keys: "%s". Expected one of: "%s".',
-                    implode('", "', ['controller']),
-                    implode('", "', YamlFileLoader::SUPPORTED_KEYS)
-                )
-            )
-        );
-        $this->loader->load('routing_with_deprecated_keys.yaml');
+        $this->expectExceptionObject(new InvalidArgumentException('The definition must not specify both the "controller" key and the defaults key "_controller".'));
+        $this->loader->load('routing_with_ambiguous_controller.yaml');
     }
 
     /**
@@ -230,6 +214,20 @@ class YamlFileLoaderTest extends TestCase
         self::assertNull($routes->get('get_status'));
         self::assertInstanceOf(Route::class, $routes->get('status'));
         self::assertSame('/status', $routes->get('status')->getPath());
+    }
+
+    /**
+     * @test
+     */
+    public function thatRouteCustomKeysWillAddToDefaults()
+    {
+        $filename = 'routing_item_with_custom_keys.yaml';
+        $routes = $this->loader->load($filename);
+        self::assertCount(2, $routes);
+        self::assertInstanceOf(Route::class, $routes->get('status'));
+        self::assertSame(['foo' => 'foo'], $routes->get('status')->getDefaults());
+        self::assertInstanceOf(Route::class, $routes->get('error'));
+        self::assertSame(['foo' => 'foo', 'bar' => 'bar'], $routes->get('error')->getDefaults());
     }
 
     /**
