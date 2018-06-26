@@ -228,8 +228,8 @@ class YamlFileLoaderTest extends TestCase
         $routes = $this->loader->load($filename);
         self::assertCount(1, $routes);
         self::assertNull($routes->get('get_status'));
-        self::assertInstanceOf(Route::class, $routes->get('/status'));
-        self::assertSame('/status', $routes->get('/status')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('status'));
+        self::assertSame('/status', $routes->get('status')->getPath());
     }
 
     /**
@@ -239,7 +239,7 @@ class YamlFileLoaderTest extends TestCase
     {
         $filename = 'routing_imports.yaml';
         $routes = $this->loader->load($filename);
-        $route = $routes->get('/api/status');
+        $route = $routes->get('api/status');
         self::assertCount(1, $routes);
         self::assertInstanceOf(Route::class, $route);
         self::assertSame('/api/status', $route->getPath());
@@ -282,10 +282,10 @@ class YamlFileLoaderTest extends TestCase
         $filename = 'routing_group.yaml';
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
-        self::assertInstanceOf(Route::class, $routes->get('/status/ok'));
-        self::assertSame('/status/ok', $routes->get('/status/ok')->getPath());
-        self::assertInstanceOf(Route::class, $routes->get('/status/error'));
-        self::assertSame('/status/error', $routes->get('/status/error')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('status/ok'));
+        self::assertSame('/status/ok', $routes->get('status/ok')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('status/error'));
+        self::assertSame('/status/error', $routes->get('status/error')->getPath());
     }
 
     /**
@@ -296,8 +296,8 @@ class YamlFileLoaderTest extends TestCase
         $filename = 'routing_methods.yaml';
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
-        $get = $routes->get('/status/get');
-        $put = $routes->get('/status/put');
+        $get = $routes->get('status/get');
+        $put = $routes->get('status/put');
         self::assertInstanceOf(Route::class, $get);
         self::assertInstanceOf(Route::class, $put);
         self::assertSame('/status', $get->getPath());
@@ -314,8 +314,8 @@ class YamlFileLoaderTest extends TestCase
         $filename = 'routing_methods_with_no_details.yaml';
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
-        $get = $routes->get('/status/get');
-        $put = $routes->get('/status/put');
+        $get = $routes->get('status/get');
+        $put = $routes->get('status/put');
         self::assertInstanceOf(Route::class, $get);
         self::assertInstanceOf(Route::class, $put);
         self::assertSame('/status', $get->getPath());
@@ -333,13 +333,13 @@ class YamlFileLoaderTest extends TestCase
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
 
-        $en = $routes->get('/status.en');
+        $en = $routes->get('status.en');
         self::assertInstanceOf(Route::class, $en);
         self::assertSame('/status/en', $en->getPath());
         self::assertSame('en', $en->getDefault('_locale'));
         self::assertSame('/status', $en->getDefault('_canonical_route'));
 
-        $es = $routes->get('/status.es');
+        $es = $routes->get('status.es');
         self::assertInstanceOf(Route::class, $es);
         self::assertSame('/status/es', $es->getPath());
         self::assertSame('es', $es->getDefault('_locale'));
@@ -354,9 +354,9 @@ class YamlFileLoaderTest extends TestCase
         $filename = 'routing_items.yaml';
         $routes = $this->loader->load($filename);
         self::assertCount(2, $routes);
-        self::assertInstanceOf(Route::class, $routes->get('/status'));
-        self::assertSame('/status', $routes->get('/status')->getPath());
-        self::assertInstanceOf(Route::class, $routes->get('/error'));
-        self::assertSame('/error', $routes->get('/error')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('status'));
+        self::assertSame('/status', $routes->get('status')->getPath());
+        self::assertInstanceOf(Route::class, $routes->get('error'));
+        self::assertSame('/error', $routes->get('error')->getPath());
     }
 }

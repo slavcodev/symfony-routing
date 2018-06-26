@@ -94,7 +94,7 @@ final class YamlFileLoader extends FileLoader
                 $collection->addCollection($localizedRoutes);
             } else {
                 $route = $this->createRoute($config);
-                $collection->add($route->getPath(), $route);
+                $collection->add(trim($route->getPath(), '/'), $route);
             }
         }
 
@@ -211,7 +211,7 @@ final class YamlFileLoader extends FileLoader
                 $route->setPath($routePrototype->getPath() . $config['path']);
             }
 
-            $collection->add($route->getPath(), $route);
+            $collection->add(trim($route->getPath(), '/'), $route);
         }
 
         return $collection;
@@ -237,7 +237,7 @@ final class YamlFileLoader extends FileLoader
 
             $route->setMethods($method === 'GET' ? ['GET', 'HEAD'] : [$method]);
 
-            $collection->add($routePrototype->getPath() . '/' . strtolower($method), $route);
+            $collection->add(trim($routePrototype->getPath(), '/') . '/' . strtolower($method), $route);
         }
 
         return $collection;
@@ -255,7 +255,7 @@ final class YamlFileLoader extends FileLoader
             $localizedRoute->setDefault('_canonical_route', $canonicalUrlTemplate);
             $localizedRoute->setPath($urlTemplate);
 
-            $collection->add($canonicalUrlTemplate . '.' . $locale, $localizedRoute);
+            $collection->add(trim($canonicalUrlTemplate, '/') . '.' . $locale, $localizedRoute);
         }
 
         return $collection;
@@ -324,8 +324,11 @@ final class YamlFileLoader extends FileLoader
             $collection->setMethods($routePrototype->getMethods());
         }
 
-        $collection->addPrefix($routePrototype->getPath());
-        $collection->addNamePrefix(rtrim($routePrototype->getPath(), '/'));
+        if ($routePrototype->getPath() !== '/') {
+            $collection->addPrefix($routePrototype->getPath());
+            $collection->addNamePrefix(trim($routePrototype->getPath(), '/') . '/');
+        }
+
         $collection->addDefaults($routePrototype->getDefaults());
         $collection->addRequirements($routePrototype->getRequirements());
         $collection->addOptions($routePrototype->getOptions());
