@@ -93,11 +93,8 @@ class YamlFileLoaderTest extends TestCase
      */
     public function invalidItemFormat()
     {
-        $filename = 'routing_with_invalid_item.yaml';
-        $expectedMessage = sprintf('The each definition in "%s" must be a YAML array.', $filename);
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->expectExceptionObject(new InvalidArgumentException('The each definition must be a YAML array.'));
+        $this->loader->load('routing_with_invalid_item.yaml');
     }
 
     /**
@@ -119,16 +116,16 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatDeprecatedKeysOfTheImportWontWork()
     {
-        $filename = 'routing_imports_with_deprecated_keys.yaml';
-        $expectedMessage = sprintf(
-            'The routing file "%s" contains unsupported keys: "%s". Expected one of: "%s".',
-            $filename,
-            implode('", "', ['prefix', 'name_prefix', 'type', 'trailing_slash_on_root']),
-            implode('", "', YamlFileLoader::SUPPORTED_KEYS)
+        $this->expectExceptionObject(
+            new InvalidArgumentException(
+                sprintf(
+                    'Definition contains unsupported keys: "%s". Expected one of: "%s".',
+                    implode('", "', ['prefix', 'name_prefix', 'type', 'trailing_slash_on_root']),
+                    implode('", "', YamlFileLoader::SUPPORTED_KEYS)
+                )
+            )
         );
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->loader->load('routing_imports_with_deprecated_keys.yaml');
     }
 
     /**
@@ -136,16 +133,16 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatDeprecatedKeysOfTheRouteWontWork()
     {
-        $filename = 'routing_with_deprecated_keys.yaml';
-        $expectedMessage = sprintf(
-            'The routing file "%s" contains unsupported keys: "%s". Expected one of: "%s".',
-            $filename,
-            implode('", "', ['controller']),
-            implode('", "', YamlFileLoader::SUPPORTED_KEYS)
+        $this->expectExceptionObject(
+            new InvalidArgumentException(
+                sprintf(
+                    'Definition contains unsupported keys: "%s". Expected one of: "%s".',
+                    implode('", "', ['controller']),
+                    implode('", "', YamlFileLoader::SUPPORTED_KEYS)
+                )
+            )
         );
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->loader->load('routing_with_deprecated_keys.yaml');
     }
 
     /**
@@ -153,14 +150,8 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatNoWayToUseBoreThanOneAggregate()
     {
-        $filename = 'routing_with_both_resource_and_group.yaml';
-        $expectedMessage = sprintf(
-            'The routing file "%s" must not specify both the "resource" key and the "group" key.',
-            $filename
-        );
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->expectExceptionObject(new InvalidArgumentException('The import definition must not specify the "group", "methods" or "locale" keys.'));
+        $this->loader->load('routing_with_both_resource_and_group.yaml');
     }
 
     /**
@@ -180,16 +171,16 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatOldMethodsFormatWontWork()
     {
-        $filename = 'routing_with_deprecated_methods_format.yaml';
-        $expectedMessage = sprintf(
-            'The routing file "%s" contains unsupported methods definition: "%s". Expected one of: "%s".',
-            $filename,
-            implode('", "', [0, 1]),
-            implode('", "', YamlFileLoader::SUPPORTED_METHODS)
+        $this->expectExceptionObject(
+            new InvalidArgumentException(
+                sprintf(
+                    'Unsupported methods definition: "%s". Expected one of: "%s".',
+                    implode('", "', [0, 1]),
+                    implode('", "', YamlFileLoader::SUPPORTED_METHODS)
+                )
+            )
         );
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->loader->load('routing_with_deprecated_methods_format.yaml');
     }
 
     /**
@@ -197,11 +188,8 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatMethodsDefinitionIsIterable()
     {
-        $filename = 'routing_methods_iterable.yaml';
-        $expectedMessage = sprintf('The definition of the "methods" in "%s" must be a YAML array.', $filename);
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must be a YAML array.'));
+        $this->loader->load('routing_methods_iterable.yaml');
     }
 
     /**
@@ -209,11 +197,8 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatAmbiguousCommonMethodsAreNotAccepted()
     {
-        $filename = 'routing_ambiguous_common_methods.yaml';
-        $expectedMessage = sprintf('The definition with the "methods" in "%s" must not specify "_allowed_methods".', $filename);
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->expectExceptionObject(new InvalidArgumentException('The definition with the "methods" must not specify "_allowed_methods".'));
+        $this->loader->load('routing_ambiguous_common_methods.yaml');
     }
 
     /**
@@ -221,11 +206,8 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatMethodsDefinitionNotContainsPath()
     {
-        $filename = 'routing_methods_with_path.yaml';
-        $expectedMessage = sprintf('The definition of the "methods" in "%s" must not specify "path".', $filename);
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must not specify "path".'));
+        $this->loader->load('routing_methods_with_path.yaml');
     }
 
     /**
@@ -233,11 +215,8 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatAmbiguousMethodsAreNotAccepted()
     {
-        $filename = 'routing_ambiguous_methods.yaml';
-        $expectedMessage = sprintf('The definition of the "methods" in "%s" must not specify "_allowed_methods".', $filename);
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must not specify "_allowed_methods".'));
+        $this->loader->load('routing_ambiguous_methods.yaml');
     }
 
     /**
