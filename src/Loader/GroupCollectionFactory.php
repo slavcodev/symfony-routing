@@ -45,9 +45,9 @@ final class GroupCollectionFactory implements CollectionFactory
                 throw new InvalidArgumentException('The each definition must be a YAML array.');
             }
 
-            RouteFactory::mergeConfigs($config, $commonConfig);
-
             $collectionFactories = array_intersect_key($this->collectionFactories, $config);
+
+            RouteFactory::mergeConfigs($config, $commonConfig);
 
             if (empty($collectionFactories)) {
                 $route = $this->routeFactory->createRoute($config);
