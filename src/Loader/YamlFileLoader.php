@@ -91,38 +91,72 @@ final class YamlFileLoader extends FileLoader implements CollectionFactory
         $collection = new RouteCollection();
 
         foreach ($imported as $subCollection) {
-            /** @var RouteCollection $subCollection */
-            if (isset($config['path'])) {
-                $subCollection->addPrefix($config['path']);
-                $subCollection->addNamePrefix(trim($config['path'], '/') . '/');
-            }
-
-            if (isset($config['host'])) {
-                $subCollection->setHost($config['host']);
-            }
-            if (isset($config['condition'])) {
-                $subCollection->setCondition($config['condition']);
-            }
-            if (isset($config['schemes'])) {
-                $subCollection->setSchemes($config['schemes']);
-            }
-            if (isset($config['defaults'])) {
-                $subCollection->addDefaults($config['defaults']);
-
-                if (isset($config['defaults']['_allowed_methods'])) {
-                    $subCollection->setMethods($config['defaults']['_allowed_methods']);
-                }
-            }
-            if (isset($config['requirements'])) {
-                $subCollection->addRequirements($config['requirements']);
-            }
-            if (isset($config['options'])) {
-                $subCollection->addOptions($config['options']);
-            }
+            $this->mergeRoutePath($subCollection, $config);
+            $this->mergeRouteHost($subCollection, $config);
+            $this->mergeRouteCondition($subCollection, $config);
+            $this->mergeRouteSchemas($subCollection, $config);
+            $this->mergeRouteDefaults($subCollection, $config);
+            $this->mergeRouteRequirements($subCollection, $config);
+            $this->mergeRouteOptions($subCollection, $config);
 
             $collection->addCollection($subCollection);
         }
 
         return $collection;
+    }
+
+    private function mergeRoutePath(RouteCollection $collection, array $config): void
+    {
+        if (isset($config['path'])) {
+            /** @var mixed $route */
+            $route = trim($config['path'], '/') . '/';
+            $collection->addPrefix($config['path']);
+            $collection->addNamePrefix($route);
+        }
+    }
+
+    private function mergeRouteHost(RouteCollection $collection, array $config): void
+    {
+        if (isset($config['host'])) {
+            $collection->setHost($config['host']);
+        }
+    }
+
+    private function mergeRouteCondition(RouteCollection $collection, array $config): void
+    {
+        if (isset($config['condition'])) {
+            $collection->setCondition($config['condition']);
+        }
+    }
+
+    private function mergeRouteSchemas(RouteCollection $collection, array $config): void
+    {
+        if (isset($config['schemes'])) {
+            $collection->setSchemes($config['schemes']);
+        }
+    }
+
+    private function mergeRouteDefaults(RouteCollection $collection, array $config): void
+    {
+        if (isset($config['defaults'])) {
+            $collection->addDefaults($config['defaults']);
+            if (isset($config['defaults']['_allowed_methods'])) {
+                $collection->setMethods($config['defaults']['_allowed_methods']);
+            }
+        }
+    }
+
+    private function mergeRouteRequirements(RouteCollection $collection, array $config): void
+    {
+        if (isset($config['requirements'])) {
+            $collection->addRequirements($config['requirements']);
+        }
+    }
+
+    private function mergeRouteOptions(RouteCollection $collection, array $config): void
+    {
+        if (isset($config['options'])) {
+            $collection->addOptions($config['options']);
+        }
     }
 }
