@@ -23,14 +23,8 @@ final class MethodsRoutesFactory implements CollectionFactory
     public function createRouteCollection($methods, array $commonConfig): RouteCollection
     {
         Assert::isArray($methods, 'methods routes');
-
-        if (isset($commonConfig['defaults']['_allowed_methods'])) {
-            throw new InvalidArgumentException('The definition with the "methods" must not specify "_allowed_methods".');
-        }
-
-        if (!isset($commonConfig['path'])) {
-            throw new InvalidArgumentException('Missing canonical path for methods routes.');
-        }
+        Assert::noAllowedMethods($commonConfig, 'methods group definition');
+        Assert::containCanonicalPath($commonConfig, 'methods group definition');
 
         $commonConfig['defaults']['_canonical_route'] = $commonConfig['path'];
 
@@ -42,14 +36,8 @@ final class MethodsRoutesFactory implements CollectionFactory
             }
 
             Assert::isArray($config, 'method definition');
-
-            if (isset($config['path'])) {
-                throw new InvalidArgumentException('The definition of the "methods" must not specify "path".');
-            }
-
-            if (isset($config['defaults']['_allowed_methods'])) {
-                throw new InvalidArgumentException('The definition of the "methods" must not specify "_allowed_methods".');
-            }
+            Assert::noPath($config, 'method definition');
+            Assert::noAllowedMethods($config, 'method definition');
 
             $method = strtoupper($method);
             $config['defaults']['_method'] = $method;

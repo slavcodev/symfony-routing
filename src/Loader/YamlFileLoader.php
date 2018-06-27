@@ -21,7 +21,6 @@ use function is_array;
 use function is_string;
 use function pathinfo;
 use function sprintf;
-use function stream_is_local;
 use function trim;
 
 final class YamlFileLoader extends FileLoader implements CollectionFactory
@@ -52,10 +51,7 @@ final class YamlFileLoader extends FileLoader implements CollectionFactory
         $filepath = $this->locator->locate($filename);
 
         Assert::isString($filepath, 'config file');
-
-        if (!stream_is_local($filepath)) {
-            throw new InvalidArgumentException(sprintf('This is not a local file "%s".', $filepath));
-        }
+        Assert::isLocalStream($filepath);
 
         $file = new FileResource($filepath);
         $this->setCurrentDir(dirname($file->getResource()));

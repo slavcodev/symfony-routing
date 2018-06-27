@@ -22,10 +22,7 @@ final class LocalizedRoutesFactory implements CollectionFactory
     public function createRouteCollection($localizedUrlTemplates, array $commonConfig): RouteCollection
     {
         Assert::isArray($localizedUrlTemplates, 'localized paths');
-
-        if (!isset($commonConfig['path'])) {
-            throw new InvalidArgumentException('Missing canonical path for localized routes.');
-        }
+        Assert::containCanonicalPath($commonConfig, 'localized paths');
 
         $commonConfig['defaults']['_canonical_route'] = $commonConfig['path'];
         unset($commonConfig['path']);

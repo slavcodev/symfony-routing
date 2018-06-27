@@ -161,7 +161,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatAmbiguousCommonMethodsAreNotAccepted()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition with the "methods" must not specify "_allowed_methods".'));
+        $this->expectExceptionObject(new InvalidArgumentException('The methods group definition must not contain "_allowed_methods".'));
         $this->loader->load('routing_ambiguous_common_methods.yaml');
     }
 
@@ -170,7 +170,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatMethodsDefinitionNotContainsPath()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must not specify "path".'));
+        $this->expectExceptionObject(new InvalidArgumentException('The method definition must not contain "path".'));
         $this->loader->load('routing_methods_with_path.yaml');
     }
 
@@ -179,7 +179,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatAmbiguousMethodsAreNotAccepted()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must not specify "_allowed_methods".'));
+        $this->expectExceptionObject(new InvalidArgumentException('The method definition must not contain "_allowed_methods".'));
         $this->loader->load('routing_ambiguous_methods.yaml');
     }
 
@@ -188,7 +188,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function requireCanonicalPathForMethodsRoutes()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for methods routes.'));
+        $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for the methods group definition.'));
         $this->loader->load('routing_methods_without_canonical.yaml');
     }
 
@@ -197,7 +197,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function requireCanonicalPathForLocalizedRoutes()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for localized routes.'));
+        $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for the localized paths.'));
         $this->loader->load('routing_locales_without_canonical.yaml');
     }
 
