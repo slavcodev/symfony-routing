@@ -114,15 +114,6 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
-    public function thatDeprecatedKeysOfTheImportWontWork()
-    {
-        $this->expectExceptionObject(new InvalidArgumentException('The keys "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.'));
-        $this->loader->load('routing_imports_with_deprecated_keys.yaml');
-    }
-
-    /**
-     * @test
-     */
     public function thatNoWayToUseBoreThanOneAggregate()
     {
         $this->expectExceptionObject(new InvalidArgumentException('The definition must not specify more than one special "resource", "group", "methods" or "locale" keys.'));

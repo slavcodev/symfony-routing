@@ -1,5 +1,0 @@
-- resource: 'routing_with_name.yaml'
-  prefix: 'foo'
-  name_prefix: 'foo'
-  type: 'yml'
-  trailing_slash_on_root: false
