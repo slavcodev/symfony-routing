@@ -16,7 +16,6 @@ use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Yaml;
 use function dirname;
-use function gettype;
 use function in_array;
 use function is_array;
 use function is_string;
@@ -52,27 +51,20 @@ final class YamlFileLoader extends FileLoader implements CollectionFactory
     {
         $filepath = $this->locator->locate($filename);
 
-        if (!is_string($filepath)) {
-            throw new InvalidArgumentException(sprintf('Got "%s" but expected the string.', gettype($filepath)));
-        }
+        Assert::isString($filepath, 'config file');
 
         if (!stream_is_local($filepath)) {
             throw new InvalidArgumentException(sprintf('This is not a local file "%s".', $filepath));
         }
 
         $file = new FileResource($filepath);
+        $this->setCurrentDir(dirname($file->getResource()));
 
         try {
             $parsedConfig = $this->yamlParser->parseFile($file->getResource(), Yaml::PARSE_CONSTANT);
         } catch (ParseException $e) {
             throw new InvalidArgumentException(sprintf('The file "%s" does not contain valid YAML.', $filepath), 0, $e);
         }
-
-        if (!is_array($parsedConfig)) {
-            throw new InvalidArgumentException(sprintf('The file "%s" must contain a YAML array.', $filepath));
-        }
-
-        $this->setCurrentDir(dirname($file->getResource()));
 
         $collection = $this->collectionFactory->createRouteCollection($parsedConfig, []);
         $collection->addResource($file);

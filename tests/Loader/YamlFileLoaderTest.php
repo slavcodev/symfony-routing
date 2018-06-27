@@ -42,7 +42,7 @@ class YamlFileLoaderTest extends TestCase
         $locator = $this->createMock(FileLocatorInterface::class);
         $locator->method('locate')->willReturn([$filename]);
         $loader = new YamlFileLoader($locator);
-        $expectedMessage = sprintf('Got "%s" but expected the string.', gettype([$filename]));
+        $expectedMessage = sprintf('The %s must be a string.', 'config file');
 
         $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
         $loader->load($filename);
@@ -82,7 +82,7 @@ class YamlFileLoaderTest extends TestCase
     public function invalidFileFormat()
     {
         $filename = 'routing_invalid_file_format.yaml';
-        $expectedMessage = sprintf('The file "%s" must contain a YAML array.', $this->loader->getLocator()->locate($filename));
+        $expectedMessage = sprintf('The group routes must be a YAML array.', $this->loader->getLocator()->locate($filename));
 
         $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
         $this->loader->load($filename);
@@ -93,7 +93,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function invalidItemFormat()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The each definition must be a YAML array.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The route definition must be a YAML array.'));
         $this->loader->load('routing_with_invalid_item.yaml');
     }
 
@@ -143,7 +143,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatOldMethodsFormatWontWork()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The each definition must be a YAML array.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The method definition must be a YAML array.'));
         $this->loader->load('routing_with_deprecated_methods_format.yaml');
     }
 
@@ -152,7 +152,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatMethodsDefinitionIsIterable()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must be a YAML array.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The methods routes must be a YAML array.'));
         $this->loader->load('routing_methods_iterable.yaml');
     }
 
@@ -215,7 +215,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function invalidLocalizedRoutesFormat()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "locales" must be a YAML array.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The localized paths must be a YAML array.'));
         $this->loader->load('routing_locales_invalid_format.yaml');
     }
 
@@ -224,7 +224,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function invalidRoutesGroupFormat()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "group" must be a YAML array.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The group routes must be a YAML array.'));
         $this->loader->load('routing_group_invalid_format.yaml');
     }
 

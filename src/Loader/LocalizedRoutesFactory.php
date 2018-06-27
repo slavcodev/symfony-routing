@@ -9,8 +9,6 @@ namespace Slavcodev\Symfony\Routing\Loader;
 
 use InvalidArgumentException;
 use Symfony\Component\Routing\RouteCollection;
-use function is_array;
-use function is_string;
 
 final class LocalizedRoutesFactory implements CollectionFactory
 {
@@ -23,9 +21,7 @@ final class LocalizedRoutesFactory implements CollectionFactory
 
     public function createRouteCollection($localizedUrlTemplates, array $commonConfig): RouteCollection
     {
-        if (!is_array($localizedUrlTemplates)) {
-            throw new InvalidArgumentException('The definition of the "locales" must be a YAML array.');
-        }
+        Assert::isArray($localizedUrlTemplates, 'localized paths');
 
         if (!isset($commonConfig['path'])) {
             throw new InvalidArgumentException('Missing canonical path for localized routes.');
@@ -37,9 +33,7 @@ final class LocalizedRoutesFactory implements CollectionFactory
         $collection = new RouteCollection();
 
         foreach ($localizedUrlTemplates as $locale => $urlTemplate) {
-            if (!is_string($urlTemplate)) {
-                throw new InvalidArgumentException('The localized path must be a string.');
-            }
+            Assert::isString($urlTemplate, 'localized path');
 
             $config = ['path' => $urlTemplate, 'defaults' => ['_locale' => $locale]];
 

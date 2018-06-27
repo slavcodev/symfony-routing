@@ -9,7 +9,6 @@ namespace Slavcodev\Symfony\Routing\Loader;
 
 use InvalidArgumentException;
 use Symfony\Component\Routing\RouteCollection;
-use function is_array;
 use function strtoupper;
 
 final class MethodsRoutesFactory implements CollectionFactory
@@ -23,9 +22,7 @@ final class MethodsRoutesFactory implements CollectionFactory
 
     public function createRouteCollection($methods, array $commonConfig): RouteCollection
     {
-        if (!is_array($methods)) {
-            throw new InvalidArgumentException('The definition of the "methods" must be a YAML array.');
-        }
+        Assert::isArray($methods, 'methods routes');
 
         if (isset($commonConfig['defaults']['_allowed_methods'])) {
             throw new InvalidArgumentException('The definition with the "methods" must not specify "_allowed_methods".');
@@ -44,9 +41,7 @@ final class MethodsRoutesFactory implements CollectionFactory
                 $config = [];
             }
 
-            if (!is_array($config)) {
-                throw new InvalidArgumentException('The each definition must be a YAML array.');
-            }
+            Assert::isArray($config, 'method definition');
 
             if (isset($config['path'])) {
                 throw new InvalidArgumentException('The definition of the "methods" must not specify "path".');

@@ -34,16 +34,12 @@ final class GroupCollectionFactory implements CollectionFactory
 
     public function createRouteCollection($routes, array $commonConfig): RouteCollection
     {
-        if (!is_array($routes)) {
-            throw new InvalidArgumentException('The definition of the "group" must be a YAML array.');
-        }
+        Assert::isArray($routes, 'group routes');
 
         $collection = new RouteCollection();
 
         foreach ($routes as $config) {
-            if (!is_array($config)) {
-                throw new InvalidArgumentException('The each definition must be a YAML array.');
-            }
+            Assert::isArray($config, 'route definition');
 
             $collectionFactories = array_intersect_key($this->collectionFactories, $config);
 
