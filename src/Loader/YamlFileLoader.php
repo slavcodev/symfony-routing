@@ -87,8 +87,8 @@ final class YamlFileLoader extends FileLoader implements CollectionFactory
 
     public function createRouteCollection($filenameGlob, array $config): RouteCollection
     {
-        if (isset($config['type']) || isset($config['prefix']) || isset($config['name_prefix']) || isset($config['trailing_slash_on_root'])) {
-            throw new InvalidArgumentException('The keys "type", "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.');
+        if (isset($config['prefix']) || isset($config['name_prefix']) || isset($config['trailing_slash_on_root'])) {
+            throw new InvalidArgumentException('The keys "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.');
         }
 
         $imported = $this->import($filenameGlob);

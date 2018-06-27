@@ -116,7 +116,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatDeprecatedKeysOfTheImportWontWork()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The keys "type", "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The keys "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.'));
         $this->loader->load('routing_imports_with_deprecated_keys.yaml');
     }
 
