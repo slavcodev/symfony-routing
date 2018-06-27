@@ -384,21 +384,34 @@ class YamlFileLoaderTest extends TestCase
     }
 
     /**
-     * test
+     * @test
      */
     public function loadingNestedRoutes()
     {
         $routes = $this->loader->load('routing_nested_items.yaml');
-        self::assertCount(2, $routes);
-        self::assertInstanceOf(Route::class, $routes->get('status'));
-        self::assertSame(
-            ['foo' => 'foo', 'bar' => 'bar', 'controller' => 'StatusController'],
-            $routes->get('status')->getDefaults()
-        );
-        self::assertInstanceOf(Route::class, $routes->get('error'));
-        self::assertSame(
-            ['foo' => 'foo', 'bar' => 'bar', 'baz' => 'baz', 'controller' => 'ErrorController'],
-            $routes->get('error')->getDefaults()
-        );
+        self::assertCount(4, $routes);
+
+        $getAlerts = $routes->get('api/alerts');
+        $putAlerts = $routes->get('api/alerts/put');
+        $statusOk = $routes->get('api/sub/status/ok');
+        $statusError = $routes->get('api/sub/status/error');
+
+        self::assertInstanceOf(Route::class, $getAlerts);
+        self::assertSame('/api/alerts', $getAlerts->getPath());
+        self::assertSame('baz', $getAlerts->getDefault('baz'));
+
+        self::assertInstanceOf(Route::class, $putAlerts);
+        self::assertSame('/api/alerts', $putAlerts->getPath());
+        self::assertSame('ApiStatusController', $putAlerts->getDefault('controller'));
+
+        self::assertInstanceOf(Route::class, $statusOk);
+        self::assertSame('/api/sub/status/ok', $statusOk->getPath());
+        self::assertSame(['GET'], $statusError->getDefault('_allowed_methods'));
+
+        self::assertInstanceOf(Route::class, $statusError);
+        self::assertSame('/api/sub/status/error', $statusError->getPath());
+        // On import resource the common config for imported routes is more priority,
+        // thus route schemes `['https']` is overridden with common schemes.
+        self::assertSame(['https', 'http'], $statusError->getSchemes());
     }
 }
