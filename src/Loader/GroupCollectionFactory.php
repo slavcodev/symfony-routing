@@ -32,7 +32,7 @@ final class GroupCollectionFactory implements CollectionFactory
         $this->collectionFactories[$key] = $factory;
     }
 
-    public function create($routes, array $commonConfig): RouteCollection
+    public function createRouteCollection($routes, array $commonConfig): RouteCollection
     {
         if (!is_array($routes)) {
             throw new InvalidArgumentException('The definition of the "group" must be a YAML array.');
@@ -45,12 +45,12 @@ final class GroupCollectionFactory implements CollectionFactory
                 throw new InvalidArgumentException('The each definition must be a YAML array.');
             }
 
-            YamlFileLoader::mergeConfigs($config, $commonConfig);
+            RouteFactory::mergeConfigs($config, $commonConfig);
 
             $collectionFactories = array_intersect_key($this->collectionFactories, $config);
 
             if (empty($collectionFactories)) {
-                $route = $this->routeFactory->create($config);
+                $route = $this->routeFactory->createRoute($config);
                 $collection->add($route->getDefault('_route'), $route);
 
                 continue;
@@ -66,7 +66,7 @@ final class GroupCollectionFactory implements CollectionFactory
             $items = $config[$key];
             unset($config[$key]);
 
-            $subCollection = $collectionFactory->create($items, $config);
+            $subCollection = $collectionFactory->createRouteCollection($items, $config);
             $collection->addCollection($subCollection);
         }
 

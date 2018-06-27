@@ -25,7 +25,25 @@ final class RouteFactory
         'condition' => true,
     ];
 
-    public function create(array $config): Route
+    public static function mergeConfigs(array &$config, array $defaultConfig)
+    {
+        if (!empty($defaultConfig)) {
+            if (isset($defaultConfig['path'], $config['path'])) {
+                $config['path'] = trim($defaultConfig['path'], '/') . '/' . ltrim($config['path'], '/');
+            }
+
+            $config = array_merge($defaultConfig, $config);
+
+            // Recursively merge iterable keys.
+            foreach (['defaults', 'requirements', 'options'] as $iterableKey) {
+                if (isset($defaultConfig[$iterableKey], $config[$iterableKey])) {
+                    $config[$iterableKey] = array_merge($defaultConfig[$iterableKey], $config[$iterableKey]);
+                }
+            }
+        }
+    }
+
+    public function createRoute(array $config): Route
     {
         $path = $config['path'] ?? '';
 

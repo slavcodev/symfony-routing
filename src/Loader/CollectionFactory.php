@@ -11,5 +11,5 @@ use Symfony\Component\Routing\RouteCollection;
 
 interface CollectionFactory
 {
-    public function create($items, array $defaultConfig): RouteCollection;
+    public function createRouteCollection($config, array $defaultConfig): RouteCollection;
 }

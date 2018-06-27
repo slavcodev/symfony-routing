@@ -20,7 +20,6 @@ use function gettype;
 use function in_array;
 use function is_array;
 use function is_string;
-use function ltrim;
 use function pathinfo;
 use function sprintf;
 use function stream_is_local;
@@ -75,7 +74,7 @@ final class YamlFileLoader extends FileLoader implements CollectionFactory
 
         $this->setCurrentDir(dirname($file->getResource()));
 
-        $collection = $this->collectionFactory->create($parsedConfig, []);
+        $collection = $this->collectionFactory->createRouteCollection($parsedConfig, []);
         $collection->addResource($file);
 
         return $collection;
@@ -86,25 +85,7 @@ final class YamlFileLoader extends FileLoader implements CollectionFactory
         return is_string($resource) && in_array(pathinfo($resource, PATHINFO_EXTENSION), ['yml', 'yaml'], true) && !$type;
     }
 
-    public static function mergeConfigs(array &$config, array $defaultConfig)
-    {
-        if (!empty($defaultConfig)) {
-            if (isset($defaultConfig['path'], $config['path'])) {
-                $config['path'] = trim($defaultConfig['path'], '/') . '/' . ltrim($config['path'], '/');
-            }
-
-            $config = array_merge($defaultConfig, $config);
-
-            // Recursively merge iterable keys.
-            foreach (['defaults', 'requirements', 'options'] as $iterableKey) {
-                if (isset($defaultConfig[$iterableKey], $config[$iterableKey])) {
-                    $config[$iterableKey] = array_merge($defaultConfig[$iterableKey], $config[$iterableKey]);
-                }
-            }
-        }
-    }
-
-    public function create($filenameGlob, array $config): RouteCollection
+    public function createRouteCollection($filenameGlob, array $config): RouteCollection
     {
         if (isset($config['type']) || isset($config['prefix']) || isset($config['name_prefix']) || isset($config['trailing_slash_on_root'])) {
             throw new InvalidArgumentException('The keys "type", "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.');

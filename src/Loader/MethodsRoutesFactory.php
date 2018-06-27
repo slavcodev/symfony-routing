@@ -21,7 +21,7 @@ final class MethodsRoutesFactory implements CollectionFactory
         $this->routeFactory = $routeFactory;
     }
 
-    public function create($methods, array $commonConfig): RouteCollection
+    public function createRouteCollection($methods, array $commonConfig): RouteCollection
     {
         if (!is_array($methods)) {
             throw new InvalidArgumentException('The definition of the "methods" must be a YAML array.');
@@ -60,9 +60,9 @@ final class MethodsRoutesFactory implements CollectionFactory
             $config['defaults']['_method'] = $method;
             $config['defaults']['_allowed_methods'] = $method;
 
-            YamlFileLoader::mergeConfigs($config, $commonConfig);
+            RouteFactory::mergeConfigs($config, $commonConfig);
 
-            $route = $this->routeFactory->create($config);
+            $route = $this->routeFactory->createRoute($config);
             $collection->add($route->getDefault('_route'), $route);
         }
 
