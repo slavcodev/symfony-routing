@@ -42,7 +42,7 @@ class YamlFileLoaderTest extends TestCase
         $locator = $this->createMock(FileLocatorInterface::class);
         $locator->method('locate')->willReturn([$filename]);
         $loader = new YamlFileLoader($locator);
-        $expectedMessage = sprintf('Got "%s" but expected the string.', gettype([$filename]));
+        $expectedMessage = sprintf('The %s must be a string.', 'config file');
 
         $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
         $loader->load($filename);
@@ -82,7 +82,7 @@ class YamlFileLoaderTest extends TestCase
     public function invalidFileFormat()
     {
         $filename = 'routing_invalid_file_format.yaml';
-        $expectedMessage = sprintf('The file "%s" must contain a YAML array.', $this->loader->getLocator()->locate($filename));
+        $expectedMessage = sprintf('The group routes must be a YAML array.', $this->loader->getLocator()->locate($filename));
 
         $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
         $this->loader->load($filename);
@@ -93,7 +93,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function invalidItemFormat()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The each definition must be a YAML array.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The route definition must be a YAML array.'));
         $this->loader->load('routing_with_invalid_item.yaml');
     }
 
@@ -114,27 +114,9 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
-    public function thatDeprecatedKeysOfTheImportWontWork()
-    {
-        $this->expectExceptionObject(new InvalidArgumentException('The keys "type", "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.'));
-        $this->loader->load('routing_imports_with_deprecated_keys.yaml');
-    }
-
-    /**
-     * @test
-     */
-    public function thatAmbiguousControllerSettingWontWork()
-    {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition must not specify both the "controller" key and the defaults key "_controller".'));
-        $this->loader->load('routing_with_ambiguous_controller.yaml');
-    }
-
-    /**
-     * @test
-     */
     public function thatNoWayToUseBoreThanOneAggregate()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The import definition must not specify the "group", "methods" or "locale" keys.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The definition must not specify more than one special "resource", "group", "methods" or "locale" keys.'));
         $this->loader->load('routing_with_both_resource_and_group.yaml');
     }
 
@@ -143,11 +125,8 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatPathMustBeString()
     {
-        $filename = 'routing_with_path_arrays.yaml';
-        $expectedMessage = 'The path should be a string.';
-
-        $this->expectExceptionObject(new InvalidArgumentException($expectedMessage));
-        $this->loader->load($filename);
+        $this->expectExceptionObject(new InvalidArgumentException('The path must be a string.'));
+        $this->loader->load('routing_with_path_arrays.yaml');
     }
 
     /**
@@ -155,15 +134,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatOldMethodsFormatWontWork()
     {
-        $this->expectExceptionObject(
-            new InvalidArgumentException(
-                sprintf(
-                    'Unsupported methods definition: "%s". Expected one of: "%s".',
-                    implode('", "', [0, 1]),
-                    implode('", "', YamlFileLoader::SUPPORTED_METHODS)
-                )
-            )
-        );
+        $this->expectExceptionObject(new InvalidArgumentException('The method definition must be a YAML array.'));
         $this->loader->load('routing_with_deprecated_methods_format.yaml');
     }
 
@@ -172,7 +143,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatMethodsDefinitionIsIterable()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must be a YAML array.'));
+        $this->expectExceptionObject(new InvalidArgumentException('The methods routes must be a YAML array.'));
         $this->loader->load('routing_methods_iterable.yaml');
     }
 
@@ -181,7 +152,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatAmbiguousCommonMethodsAreNotAccepted()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition with the "methods" must not specify "_allowed_methods".'));
+        $this->expectExceptionObject(new InvalidArgumentException('The methods group definition must not contain "_allowed_methods".'));
         $this->loader->load('routing_ambiguous_common_methods.yaml');
     }
 
@@ -190,7 +161,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatMethodsDefinitionNotContainsPath()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must not specify "path".'));
+        $this->expectExceptionObject(new InvalidArgumentException('The method definition must not contain "path".'));
         $this->loader->load('routing_methods_with_path.yaml');
     }
 
@@ -199,8 +170,53 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatAmbiguousMethodsAreNotAccepted()
     {
-        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "methods" must not specify "_allowed_methods".'));
+        $this->expectExceptionObject(new InvalidArgumentException('The method definition must not contain "_allowed_methods".'));
         $this->loader->load('routing_ambiguous_methods.yaml');
+    }
+
+    /**
+     * @test
+     */
+    public function requireCanonicalPathForMethodsRoutes()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for the methods group definition.'));
+        $this->loader->load('routing_methods_without_canonical.yaml');
+    }
+
+    /**
+     * @test
+     */
+    public function requireCanonicalPathForLocalizedRoutes()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('Missing canonical path for the localized paths.'));
+        $this->loader->load('routing_locales_without_canonical.yaml');
+    }
+
+    /**
+     * @test
+     */
+    public function requirePathForLocalizedRoute()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('The localized path must be a string.'));
+        $this->loader->load('routing_locales_without_path.yaml');
+    }
+
+    /**
+     * @test
+     */
+    public function invalidLocalizedRoutesFormat()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('The localized paths must be a YAML array.'));
+        $this->loader->load('routing_locales_invalid_format.yaml');
+    }
+
+    /**
+     * @test
+     */
+    public function invalidRoutesGroupFormat()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('The group routes must be a YAML array.'));
+        $this->loader->load('routing_group_invalid_format.yaml');
     }
 
     /**
@@ -208,8 +224,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatRouteNameSameAsPath()
     {
-        $filename = 'routing_with_name.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_with_name.yaml');
         self::assertCount(1, $routes);
         self::assertNull($routes->get('get_status'));
         self::assertInstanceOf(Route::class, $routes->get('status'));
@@ -221,17 +236,16 @@ class YamlFileLoaderTest extends TestCase
      */
     public function thatRouteCustomKeysWillAddToDefaults()
     {
-        $filename = 'routing_item_with_custom_keys.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_item_with_custom_keys.yaml');
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('status'));
         self::assertSame(
-            ['foo' => 'foo', 'bar' => 'bar', 'controller' => 'StatusController'],
+            ['foo' => 'foo', 'bar' => 'bar', 'controller' => 'StatusController', '_route' => 'status'],
             $routes->get('status')->getDefaults()
         );
         self::assertInstanceOf(Route::class, $routes->get('error'));
         self::assertSame(
-            ['foo' => 'foo', 'bar' => 'bar', 'baz' => 'baz', 'controller' => 'ErrorController'],
+            ['bar' => 'bar', 'foo' => 'foo', 'baz' => 'baz', 'controller' => 'ErrorController', '_route' => 'error'],
             $routes->get('error')->getDefaults()
         );
     }
@@ -243,10 +257,10 @@ class YamlFileLoaderTest extends TestCase
     {
         $filename = 'routing_imports.yaml';
         $routes = $this->loader->load($filename);
-        $route = $routes->get('api/status');
+        $route = $routes->get('api/sub/status');
         self::assertCount(1, $routes);
         self::assertInstanceOf(Route::class, $route);
-        self::assertSame('/api/status', $route->getPath());
+        self::assertSame('/api/sub/status', $route->getPath());
         // These properties from import override children routes
         self::assertSame('example.com', $route->getHost());
         self::assertSame(['https'], $route->getSchemes());
@@ -272,6 +286,7 @@ class YamlFileLoaderTest extends TestCase
             [
                 'bar' => 'bar',
                 '_allowed_methods' => ['GET', 'HEAD'],
+                '_route' => 'status',
                 '_controller' => 'FooController',
             ],
             $route->getDefaults()
@@ -283,8 +298,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingGrouped()
     {
-        $filename = 'routing_group.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_group.yaml');
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('status/ok'));
         self::assertSame('/status/ok', $routes->get('status/ok')->getPath());
@@ -297,16 +311,15 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingMethodsGroup()
     {
-        $filename = 'routing_methods.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_methods.yaml');
         self::assertCount(2, $routes);
-        $get = $routes->get('status/get');
+        $get = $routes->get('status');
         $put = $routes->get('status/put');
         self::assertInstanceOf(Route::class, $get);
         self::assertInstanceOf(Route::class, $put);
         self::assertSame('/status', $get->getPath());
         self::assertSame('/status', $put->getPath());
-        self::assertSame(['GET', 'HEAD'], $get->getMethods());
+        self::assertSame(['GET'], $get->getMethods());
         self::assertSame(['PUT'], $put->getMethods());
     }
 
@@ -315,16 +328,15 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingMethodsWithNoDetails()
     {
-        $filename = 'routing_methods_with_no_details.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_methods_with_no_details.yaml');
         self::assertCount(2, $routes);
-        $get = $routes->get('status/get');
+        $get = $routes->get('status');
         $put = $routes->get('status/put');
         self::assertInstanceOf(Route::class, $get);
         self::assertInstanceOf(Route::class, $put);
         self::assertSame('/status', $get->getPath());
         self::assertSame('/status', $put->getPath());
-        self::assertSame(['GET', 'HEAD'], $get->getMethods());
+        self::assertSame(['GET'], $get->getMethods());
         self::assertSame(['PUT'], $put->getMethods());
     }
 
@@ -333,8 +345,7 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingLocalized()
     {
-        $filename = 'routing_locales.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_locales.yaml');
         self::assertCount(2, $routes);
 
         $en = $routes->get('status.en');
@@ -355,12 +366,43 @@ class YamlFileLoaderTest extends TestCase
      */
     public function loadRoutingItem()
     {
-        $filename = 'routing_items.yaml';
-        $routes = $this->loader->load($filename);
+        $routes = $this->loader->load('routing_items.yaml');
         self::assertCount(2, $routes);
         self::assertInstanceOf(Route::class, $routes->get('status'));
         self::assertSame('/status', $routes->get('status')->getPath());
         self::assertInstanceOf(Route::class, $routes->get('error'));
         self::assertSame('/error', $routes->get('error')->getPath());
+    }
+
+    /**
+     * @test
+     */
+    public function loadingNestedRoutes()
+    {
+        $routes = $this->loader->load('routing_nested_items.yaml');
+        self::assertCount(4, $routes);
+
+        $getAlerts = $routes->get('api/alerts');
+        $putAlerts = $routes->get('api/alerts/put');
+        $statusOk = $routes->get('api/sub/status/ok');
+        $statusError = $routes->get('api/sub/status/error');
+
+        self::assertInstanceOf(Route::class, $getAlerts);
+        self::assertSame('/api/alerts', $getAlerts->getPath());
+        self::assertSame('baz', $getAlerts->getDefault('baz'));
+
+        self::assertInstanceOf(Route::class, $putAlerts);
+        self::assertSame('/api/alerts', $putAlerts->getPath());
+        self::assertSame('ApiStatusController', $putAlerts->getDefault('controller'));
+
+        self::assertInstanceOf(Route::class, $statusOk);
+        self::assertSame('/api/sub/status/ok', $statusOk->getPath());
+        self::assertSame(['GET'], $statusError->getDefault('_allowed_methods'));
+
+        self::assertInstanceOf(Route::class, $statusError);
+        self::assertSame('/api/sub/status/error', $statusError->getPath());
+        // On import resource the common config for imported routes is more priority,
+        // thus route schemes `['https']` is overridden with common schemes.
+        self::assertSame(['https', 'http'], $statusError->getSchemes());
     }
 }

@@ -1,4 +1,0 @@
-- path: '/status'
-  defaults:
-    _controller: 'App\Controller\StatusApiController'
-  controller: 'App\Controller\StatusApiController'

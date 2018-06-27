@@ -1,0 +1,19 @@
+- path: 'api'
+  host: example.org
+  schemes: ['https', 'http']
+  defaults:
+    foo: foo
+  requirements:
+    id: \d+
+  options:
+    param: value
+  group:
+    - path: 'alerts'
+      bar: bar
+      methods:
+        get:
+          baz: baz
+        put:
+          controller: ApiStatusController
+    - resource: 'routing_group.yaml'
+      path: 'sub'
