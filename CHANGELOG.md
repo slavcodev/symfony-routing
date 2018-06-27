@@ -18,13 +18,17 @@ Security - in case of vulnerabilities.
 
 _TBD_
 
+## [0.5.0] 2018-06-27
+### Added
+- [x] Implement nested parsing.
+
 ## [0.4.1] 2018-06-26
 ### Fixed
 - [x] Fixed merging the custom keys and defaults.
 
 ## [0.4.0] 2018-06-26
 ### Added
-- [x] Added support for custom fields, they are moved to defaults keys.
+- [x] Added support for custom keys, they are moved to defaults keys.
 
 ### Fixed
 - [x] Fixed concatenation of base path and specific path for the groups.
