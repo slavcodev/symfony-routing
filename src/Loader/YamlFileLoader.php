@@ -11,7 +11,6 @@ use InvalidArgumentException;
 use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\Config\Loader\FileLoader;
 use Symfony\Component\Config\Resource\FileResource;
-use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
@@ -27,32 +26,27 @@ use function sprintf;
 use function stream_is_local;
 use function trim;
 
-final class YamlFileLoader extends FileLoader
+final class YamlFileLoader extends FileLoader implements CollectionFactory
 {
-    public const SPECIAL_KEYS = [
-        'resource' => true,
-        'group' => true,
-        'methods' => true,
-        'locales' => true,
-    ];
-
-    public const SUPPORTED_METHODS = ['OPTIONS', 'HEAD', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-
     private $yamlParser;
 
     private $routeFactory;
 
-    private $methodCollectionFactory;
-
-    private $localizedCollectionFactory;
+    private $collectionFactory;
 
     public function __construct(FileLocatorInterface $locator)
     {
         parent::__construct($locator);
         $this->yamlParser = new Parser();
         $this->routeFactory = new RouteFactory();
-        $this->methodCollectionFactory = new MethodsRoutesFactory($this->routeFactory);
-        $this->localizedCollectionFactory = new LocalizedRoutesFactory($this->routeFactory);
+        $this->collectionFactory = new GroupCollectionFactory(
+            $this->routeFactory,
+            [
+                'resource' => $this,
+                'locales' => new LocalizedRoutesFactory($this->routeFactory),
+                'methods' => new MethodsRoutesFactory($this->routeFactory),
+            ]
+        );
     }
 
     public function load($filename, $type = null): RouteCollection
@@ -81,7 +75,7 @@ final class YamlFileLoader extends FileLoader
 
         $this->setCurrentDir(dirname($file->getResource()));
 
-        $collection = $this->createGroupRoutes($parsedConfig, []);
+        $collection = $this->collectionFactory->create($parsedConfig, []);
         $collection->addResource($file);
 
         return $collection;
@@ -110,37 +104,7 @@ final class YamlFileLoader extends FileLoader
         }
     }
 
-    private function parseDefinition(RouteCollection $collection, $config)
-    {
-        $cleanConfig = array_diff_key($config, self::SPECIAL_KEYS);
-
-        if ($cleanConfig === $config) {
-            $route = $this->routeFactory->create($config);
-            $collection->add($route->getDefault('_route'), $route);
-
-            return;
-        }
-
-        if (count($config) - count($cleanConfig) > 1) {
-            throw new InvalidArgumentException('The definition must not specify more than one special "resource", "group", "methods" or "locale" keys.');
-        }
-
-        if (isset($config['resource'])) {
-            $subCollection = $this->importRoutes($config['resource'], $cleanConfig);
-            $collection->addCollection($subCollection);
-        } elseif (isset($config['group'])) {
-            $subCollection = $this->createGroupRoutes($config['group'], $cleanConfig);
-            $collection->addCollection($subCollection);
-        } elseif (isset($config['methods'])) {
-            $subCollection = $this->methodCollectionFactory->create($config['methods'], $cleanConfig);
-            $collection->addCollection($subCollection);
-        } elseif (isset($config['locales'])) {
-            $subCollection = $this->localizedCollectionFactory->create($config['locales'], $cleanConfig);
-            $collection->addCollection($subCollection);
-        }
-    }
-
-    private function importRoutes(string $filenameGlob, array $config): RouteCollection
+    public function create($filenameGlob, array $config): RouteCollection
     {
         if (isset($config['type']) || isset($config['prefix']) || isset($config['name_prefix']) || isset($config['trailing_slash_on_root'])) {
             throw new InvalidArgumentException('The keys "type", "prefix", "name_prefix" and "trailing_slash_on_root" are deprecated.');
@@ -160,101 +124,32 @@ final class YamlFileLoader extends FileLoader
                 $subCollection->addNamePrefix(trim($config['path'], '/') . '/');
             }
 
-            $this->mergeRouteHost($subCollection, $config);
-            $this->mergeRouteCondition($subCollection, $config);
-            $this->mergeRouteSchemas($subCollection, $config);
-            $this->mergeRouteDefaults($subCollection, $config);
-            $this->mergeRouteRequirements($subCollection, $config);
-            $this->mergeRouteOptions($subCollection, $config);
+            if (isset($config['host'])) {
+                $subCollection->setHost($config['host']);
+            }
+            if (isset($config['condition'])) {
+                $subCollection->setCondition($config['condition']);
+            }
+            if (isset($config['schemes'])) {
+                $subCollection->setSchemes($config['schemes']);
+            }
+            if (isset($config['defaults'])) {
+                $subCollection->addDefaults($config['defaults']);
+
+                if (isset($config['defaults']['_allowed_methods'])) {
+                    $subCollection->setMethods($config['defaults']['_allowed_methods']);
+                }
+            }
+            if (isset($config['requirements'])) {
+                $subCollection->addRequirements($config['requirements']);
+            }
+            if (isset($config['options'])) {
+                $subCollection->addOptions($config['options']);
+            }
+
             $collection->addCollection($subCollection);
         }
 
         return $collection;
-    }
-
-    private function createGroupRoutes(array $routes, array $groupConfig): RouteCollection
-    {
-        $collection = new RouteCollection();
-
-        foreach ($routes as $config) {
-            if (!is_array($config)) {
-                throw new InvalidArgumentException('The each definition must be a YAML array.');
-            }
-
-            self::mergeConfigs($config, $groupConfig);
-            $this->parseDefinition($collection, $config);
-        }
-
-        return $collection;
-    }
-
-    /**
-     * @param Route|RouteCollection $routeOrCollection
-     * @param array $config
-     */
-    private function mergeRouteHost($routeOrCollection, array $config): void
-    {
-        if (isset($config['host'])) {
-            $routeOrCollection->setHost($config['host']);
-        }
-    }
-
-    /**
-     * @param Route|RouteCollection $routeOrCollection
-     * @param array $config
-     */
-    private function mergeRouteCondition($routeOrCollection, array $config): void
-    {
-        if (isset($config['condition'])) {
-            $routeOrCollection->setCondition($config['condition']);
-        }
-    }
-
-    /**
-     * @param Route|RouteCollection $routeOrCollection
-     * @param array $config
-     */
-    private function mergeRouteSchemas($routeOrCollection, array $config): void
-    {
-        if (isset($config['schemes'])) {
-            $routeOrCollection->setSchemes($config['schemes']);
-        }
-    }
-
-    /**
-     * @param Route|RouteCollection $routeOrCollection
-     * @param array $config
-     */
-    private function mergeRouteDefaults($routeOrCollection, array $config): void
-    {
-        if (isset($config['defaults'])) {
-            $routeOrCollection->addDefaults($config['defaults']);
-
-            if (isset($config['defaults']['_allowed_methods'])) {
-                $routeOrCollection->setMethods($config['defaults']['_allowed_methods']);
-            }
-        }
-    }
-
-    /**
-     * @param Route|RouteCollection $routeOrCollection
-     * @param array $config
-     */
-    private function mergeRouteRequirements($routeOrCollection, array $config): void
-    {
-        if (isset($config['requirements'])) {
-            $routeOrCollection->addRequirements($config['requirements']);
-        }
-    }
-
-    /**
-     * @param Route|RouteCollection $routeOrCollection
-     * @param array $config
-     */
-    private function mergeRouteOptions($routeOrCollection, array $config): void
-    {
-        if (isset($config['options'])) {
-            $routeOrCollection->addOptions($config['options']);
-        }
     }
 }

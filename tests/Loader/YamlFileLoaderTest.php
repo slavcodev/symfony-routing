@@ -222,6 +222,15 @@ class YamlFileLoaderTest extends TestCase
     /**
      * @test
      */
+    public function invalidRoutesGroupFormat()
+    {
+        $this->expectExceptionObject(new InvalidArgumentException('The definition of the "group" must be a YAML array.'));
+        $this->loader->load('routing_group_invalid_format.yaml');
+    }
+
+    /**
+     * @test
+     */
     public function thatRouteNameSameAsPath()
     {
         $routes = $this->loader->load('routing_with_name.yaml');
